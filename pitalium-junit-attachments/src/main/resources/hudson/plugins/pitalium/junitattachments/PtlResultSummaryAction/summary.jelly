@@ -1,0 +1,17 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<tr><td>
+               <h3>サマリー</h3>
+               <script src="${rootURL}/plugin/pitalium-junit-attachments/script/PitaResult.js"></script>
+               <link href="${rootURL}/plugin/pitalium-junit-attachments/script/PitaResultStyle.css" rel="stylesheet" />
+               <script src="${rootURL}/plugin/pitalium-junit-attachments/script/perse_e_result.js"></script>
+               <div id="PitaResult"></div>
+               <h3 id="PitaExtract"></h3>
+               <script type="text/javascript">
+               PitaResultShow();
+               </script>
+       </td></tr>
+       <tr><td>
+	</td></tr>
+
+</j:jelly>

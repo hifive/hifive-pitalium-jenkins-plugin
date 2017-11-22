@@ -1,0 +1,23 @@
+/*
+プラグインのテーブル用CSS
+*/
+
+#PitaResultTable *{
+font-size:small;
+}
+
+#PitaResultTable .PitaColumnLabel{
+font-weight:bold;
+}
+#PitaResultTable .PitaRowLabel{
+font-weight:bold;
+}
+#PitaResultTable td{
+ border: 1px solid;
+ padding:2px 4px;
+ width:32px;
+}
+
+.Pita_selected{
+background-color:#cccccc;
+}

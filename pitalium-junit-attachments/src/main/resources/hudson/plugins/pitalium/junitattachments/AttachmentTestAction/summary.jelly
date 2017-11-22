@@ -1,0 +1,32 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<tr><td>
+
+	<h3>配下にある画像ファイル</h3>
+	<table class="pane" id="attachments">
+		<tr>
+			<td class="pane-header">${%Files}</td>
+		</tr>
+				<tr>
+					<td class="pane">
+			<j:forEach var="attachment" items="${it.attachments}">
+
+						<a class="${it.isImageFile(attachment) ? 'gallery' : ''}"
+						   title="${attachment}"
+						   href="attachments/${attachment}"><img src="attachments/${attachment}" width="160" /></a>
+
+			</j:forEach>
+					</td>
+				</tr>	</table>
+	</td></tr>
+    <st:adjunct includes="hudson.plugins.jquery.colorbox" />
+    <script type="text/javascript">
+        jQuery(document).ready(function() {
+            jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150});
+        });
+    </script>
+	<script src="${rootURL}/plugin/pitalium-junit-attachments/script/uriencorder.js"></script>
+	<script type="text/javascript">
+               uriencorder();
+    </script>
+</j:jelly>

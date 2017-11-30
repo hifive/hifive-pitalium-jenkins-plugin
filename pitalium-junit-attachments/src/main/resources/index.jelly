@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    PitaliumのJenkinsを用いたCI連携強化のためのプラグイン
+</div>

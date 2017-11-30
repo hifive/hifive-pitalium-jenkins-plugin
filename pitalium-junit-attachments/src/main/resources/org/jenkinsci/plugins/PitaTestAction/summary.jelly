@@ -3,6 +3,7 @@
 <tr><td>
 
 	<h3>配下にある画像ファイル</h3>
+	<span id="ptlcondition" conditionpkg="${it.getCondition_pkg()}" conditioncls="${it.getCondition_cls()}" conditionshowtable="${it.getCondition_showtable()}"></span>
 	<table class="pane" id="attachments">
 		<tr>
 			<td class="pane-header">${%Files}</td>
@@ -24,9 +25,5 @@
         jQuery(document).ready(function() {
             jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150});
         });
-    </script>
-	<script src="${rootURL}/plugin/pitalium-junit-attachments/script/uriencorder.js"></script>
-	<script type="text/javascript">
-               uriencorder();
     </script>
 </j:jelly>

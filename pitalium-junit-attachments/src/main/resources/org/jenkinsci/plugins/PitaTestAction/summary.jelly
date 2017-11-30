@@ -2,8 +2,8 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 <tr><td>
 
-	<h3>配下にある画像ファイル</h3>
 	<span id="ptlcondition" conditionpkg="${it.getCondition_pkg()}" conditioncls="${it.getCondition_cls()}" conditionshowtable="${it.getCondition_showtable()}"></span>
+    	<h3>配下にある画像ファイル</h3>
 	<table class="pane" id="attachments">
 		<tr>
 			<td class="pane-header">${%Files}</td>
@@ -19,6 +19,18 @@
 			</j:forEach>
 					</td>
 				</tr>	</table>
+    <table>
+           <tr><td>
+            <h3>サマリー</h3>
+            <script src="attachments/result.js"></script>
+            <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
+            <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
+            <div id="PitaResult"></div>
+            <script type="text/javascript">
+            GenSummaryTable();
+            </script>
+            </td></tr>
+    </table>
 	</td></tr>
     <st:adjunct includes="hudson.plugins.jquery.colorbox" />
     <script type="text/javascript">

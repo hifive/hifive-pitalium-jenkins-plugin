@@ -24,9 +24,11 @@ import java.util.TreeMap;
 
 
 public class PitaPublisher extends TestDataPublisher{
+    private final String resultPicsAddr;
     @DataBoundConstructor
-    public PitaPublisher(){
-
+    public PitaPublisher(String resultPicsAddr){
+        this.resultPicsAddr=resultPicsAddr;
+        System.err.println(resultPicsAddr);
     }
 
     public static FilePath getAttachmentPath(Run<?, ?> build) {
@@ -46,7 +48,7 @@ public class PitaPublisher extends TestDataPublisher{
     public Data contributeTestData(Run<?, ?> build, FilePath workspace, Launcher launcher,
                                    TaskListener listener, TestResult testResult) throws IOException,InterruptedException
     {
-        final GetResultOutput obj=new GetResultOutput(build, workspace, launcher, listener, testResult);
+        final GetResultOutput obj=new GetResultOutput(build, workspace, launcher, listener, testResult,resultPicsAddr);
         HashMap<String,HashMap<String,HashMap<String,List<String>>>> pictures=obj.getPictures();
 
         if (pictures.isEmpty()) {

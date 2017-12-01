@@ -25,15 +25,17 @@ public class GetResultOutput {
     private final FilePath attachmentsStorage;
     private final TaskListener listener;
     private final FilePath workspace;
+    private final String resultPicsAddr;
 
     public GetResultOutput(Run<?, ?> build, @Nonnull FilePath workspace,
                                    @SuppressWarnings("unused") Launcher launcher,
-                                   TaskListener listener, TestResult testResult) {
+                                   TaskListener listener, TestResult testResult,String resultPicsAddr) {
         this.build = build;
         this.testResult = testResult;
         this.listener = listener;
         this.attachmentsStorage = PitaPublisher.getAttachmentPath(build);
         this.workspace = workspace;
+        this.resultPicsAddr= resultPicsAddr;
     }
 
     /**画像の検索と結果用jsonファイルの作成*/
@@ -86,7 +88,7 @@ public class GetResultOutput {
     /**探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成*/
     //TODO ファイル操作
     private List<String> SearchPictures(SuiteResult suiteResult,String caseName,FilePath target){
-        FilePath resultDirectory=new FilePath(workspace,"results");
+        FilePath resultDirectory=new FilePath(workspace,resultPicsAddr);
 
         String keyword=getTestName(caseName,getCapbilities(caseName));
         String directory=getSearchDirectory(suiteResult.getStdout());

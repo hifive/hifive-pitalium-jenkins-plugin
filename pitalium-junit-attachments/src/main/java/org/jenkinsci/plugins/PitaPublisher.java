@@ -22,13 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+/**テスト実行後に呼び出される．*/
 public class PitaPublisher extends TestDataPublisher{
     private final String resultPicsAddr;
     @DataBoundConstructor
     public PitaPublisher(String resultPicsAddr){
         this.resultPicsAddr=resultPicsAddr;
-        System.err.println(resultPicsAddr);
     }
 
     public static FilePath getAttachmentPath(Run<?, ?> build) {
@@ -58,8 +57,7 @@ public class PitaPublisher extends TestDataPublisher{
         return new Data(pictures);
     }
 
-    //TODO パスにString利用有り．
-    //TODO Stringの＋
+    //TODO 動作チェック：パスにString利用有り．
     public static class Data extends TestResultAction.Data {
         private HashMap<String,HashMap<String,HashMap<String,List<String>>>> pictures;
 
@@ -70,8 +68,6 @@ public class PitaPublisher extends TestDataPublisher{
         @Override
         @SuppressWarnings("deprecation")
         public List<TestAction> getTestAction(hudson.tasks.junit.TestObject t) {
-            ArrayList<FilePath> picturesList=new ArrayList<>();
-
             TestObject testObject = (TestObject) t;
             String packageName;
             String className;
@@ -120,9 +116,6 @@ public class PitaPublisher extends TestDataPublisher{
                 }
             }else{//EXCEPTION?
                 return Collections.emptyList();
-            }
-            if(attachmentPaths.isEmpty()){
-//                return Collections.emptyList();
             }
 
             String fullName = "";

@@ -1,3 +1,4 @@
+/**テスト結果の集計テーブルを作成，テーブルクリックによる結果抽出を行うスクリプト*/
 function GenSummaryTable(){
     element = document.getElementById("ptlcondition");
     if(element==null)return;
@@ -6,22 +7,22 @@ function GenSummaryTable(){
     cls=element.getAttribute("conditioncls");
 
 
-//横軸：OS(platform)×ブラウザ(browserName)
-//縦軸：エラー名(errName)×エラー箇所（errLocation）
-
-var keyC1="platform"
-var keyC2="browserName"
-var keyR1="errName"
-var keyR2="errLocation"
+    //横軸：OS(platform)×ブラウザ(browserName)
+    //縦軸：エラー名(errName)×エラー箇所（errLocation）
+    //変更可能
+    var keyC1="platform";
+    var keyC2="browserName";
+    var keyR1="errName";
+    var keyR2="errLocation";
 
     //{C1:{C2:{R1:{C2:[count,[エラー名リスト]]}}}}
     //当該エラーのカウント
-    dataTable={}
+    dataTable={};
 
     //colum1,colum2
     //列と行のタイトル
-    var columns={}
-    var rows={}
+    var columns={};
+    var rows={};
 
     if(pkg!=null){
         resultdata={[pkg]:resultdata[pkg]};
@@ -64,11 +65,11 @@ var keyR2="errLocation"
     }
 
     //セルのｘ座標に対応したタイトル
-    titleC1=[]
-    titleC2=[]
+    titleC1=[];
+    titleC2=[];
     //セルのｙ座標に対応したタイトル
-    titleR1=[]
-    titleR2=[]
+    titleR1=[];
+    titleR2=[];
 
     //タグを吐く
     table = document.createElement("table");
@@ -196,7 +197,7 @@ var keyR2="errLocation"
     element.appendChild(table);
 }
 
-//@param 座標
+//INPUT:座標（集計数字セル左上を0,0とする）
 function PitaResultExtract(column,row){
     //条件を満たしたテストのフルネーム
     var str=[];
@@ -265,7 +266,7 @@ function PitaResultExtract(column,row){
     var element = document.getElementById("main-panel").getElementsByTagName("h2").item(0);
     element.innerHTML="Failed Test<br>(Filter:["+condition+"])";
 
-    //テーブルから抽出
+    //失敗結果の一覧テーブルから抽出
     var element = document.getElementById("main-panel").getElementsByClassName("pane sortable bigtable").item(0);
     var elementTr=element.children.item(0);
     var elementTr=elementTr.children;

@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.*;
 
+/**テスト結果から画像を抽出する．画像コピーと一覧作成を実行
+ * 結果テーブルで利用するjsonファイルも併せて作成*/
 public class GetResultOutput {
 
     private final Run<?, ?> build;
@@ -38,9 +40,8 @@ public class GetResultOutput {
         this.resultPicsAddr= resultPicsAddr;
     }
 
-    /**画像の検索と結果用jsonファイルの作成*/
+    /**画像の検索と画像コピー，画像リスト作成および，結果用jsonファイルの作成*/
     public HashMap<String,HashMap<String,HashMap<String,List<String>>>> getPictures(){
-        /**@return jsfile <パッケージ名,<クラス名,<メソッド名,<key,val>>>>*/
         //注意：重複メソッド名はない仮定（上書きされる）
         Gson gson = new Gson();
         HashMap<String,HashMap<String,HashMap<String,HashMap<String,String>>>> json_package=new HashMap<>();
@@ -65,7 +66,7 @@ public class GetResultOutput {
                     json_capabilities.putAll(getErrorInfo(caseResult));
                     json_package.get(pkgName).get(clsName).put(caseName,json_capabilities);
 
-                    //TODO ↓仕事的にはSearchPicturesが適切
+                    //結果格納用フォルダの作成
                     FilePath target = PitaPublisher.getAttachmentPath(attachmentsStorage, pkgName);
                     target = PitaPublisher.getAttachmentPath(target,clsName);
                     target = PitaPublisher.getAttachmentPath(target,caseName);
@@ -77,21 +78,20 @@ public class GetResultOutput {
             FilePath resultjspath = PitaPublisher.getAttachmentPath(attachmentsStorage, "result.js");
             resultjspath.write("var resultdata="+gson.toJson(json_package),null);
             return  pictures_map;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        return null;//最後にpwとtryを最後に移して，削除
+        return null;
     }
 
     /**探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成*/
-    //TODO ファイル操作
+    //TODO チェック：ファイル操作
     private List<String> SearchPictures(SuiteResult suiteResult,String caseName,FilePath target){
         FilePath resultDirectory=new FilePath(workspace,resultPicsAddr);
 
         String keyword=getTestName(caseName,getCapbilities(caseName));
         String directory=getSearchDirectory(suiteResult.getStdout());
+        if(directory==null || keyword==null)return Collections.emptyList();
         FilePath dir = new FilePath(resultDirectory,directory);
         try {
             if(!dir.exists()){
@@ -110,15 +110,15 @@ public class GetResultOutput {
             }
 
             return Arrays.asList(pics);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         return Collections.emptyList();
     }
-    /**標準出力から探索ディレクトリを切り出し*/
-    //TODO パス操作
+
+    /**標準出力から探索ディレクトリを切り出し
+     * @return String 探索する相対パス*/
+    //TODO チェック：パス操作
     // FILEPATH型じゃないString型で\つきパスを返すので，リモートでも動くか要確認．
     private String getSearchDirectory(String stdout){
         String str=stdout.substring(stdout.lastIndexOf("[Save TestResult]"));
@@ -128,11 +128,11 @@ public class GetResultOutput {
             return m.group(1);
         }else{
             System.err.println("[Exception]Fail to tokenize "+str+". Following step in this case was skipped.");
-            //TODO エラー処理
             return null;
         }
     }
-    /**テストケース名から，探索すべき画像名を作成*/
+    /**テストケース名から，探索すべき画像名（ワイルドカード付）を作成
+     * @return String 検索するファイル名*/
     private String getTestName(String testName,HashMap<String,String> capbilities){
         Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities.*\\]$");
         Matcher m = p.matcher(testName);
@@ -141,7 +141,6 @@ public class GetResultOutput {
             buff.append("**/"+m.group(1)+"_*_");
             if (capbilities.get("platform")!=null){
                 buff.append(capbilities.get("platform"));
-                //TODO ヴァージョン？
             }
             buff.append('_');
             if (capbilities.get("browserName")!=null){
@@ -154,12 +153,12 @@ public class GetResultOutput {
             return buff.toString();
         }else{
             System.err.println("[Exception]Fail to tokenize "+testName+". Following step in this case was skipped.");
-            //TODO エラー処理
             return null;
         }
     }
 
-    /**テストケース名から，端末情報のマップを作成*/
+    /**テストケース名から，端末情報のマップを作成
+     * Capbilitiesの要素が，os=WINDOWSのように=がついた構造になってない場合，例外発生．*/
     private HashMap<String,String> getCapbilities(String testName){
         HashMap<String, String> capbility_map = new HashMap<String, String>();
         Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities\\s?\\[\\{(.*)\\}\\]\\]$");
@@ -168,12 +167,15 @@ public class GetResultOutput {
             String[] token = m.group(2).split(", ");
             for (int i = 0; i < token.length; i++) {
                 String[] caps = token[i].split("=");
-                capbility_map.put(caps[0], caps[1]);//TODO ぬるぽの恐れ，try catch?
+                capbility_map.put(caps[0], caps[1]);
             }
         }
         return capbility_map;
     }
 
+    /**エラー情報を返す
+     * 成功やスキップ時には，エラー名にSUCCESS，SKIPPEDが格納される．
+     * エラー名はスタックトレースの1行目，エラー箇所はat～～の最初の行を抽出*/
     private HashMap<String,String> getErrorInfo(CaseResult caseResult){
         HashMap<String, String> error_map = new HashMap<String, String>();
         if(caseResult.isSkipped()){

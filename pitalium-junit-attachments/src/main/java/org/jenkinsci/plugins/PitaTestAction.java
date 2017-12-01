@@ -8,6 +8,7 @@ import jenkins.model.Jenkins;
 
 import java.util.List;
 
+/**テスト結果ページの表示で利用*/
 public class PitaTestAction extends TestAction {
 
     private final FilePath storage;
@@ -22,6 +23,7 @@ public class PitaTestAction extends TestAction {
         this.testObject = testObject;
         this.attachments = attachments;
         if (testObject instanceof CaseResult) {
+            //ケースレベルではテーブルを表示しない
             this.condition_showtable="false";
             this.condition_pkg=null;
             this.condition_cls=null;
@@ -40,6 +42,7 @@ public class PitaTestAction extends TestAction {
             this.condition_pkg=null;
             this.condition_cls=null;
         }else{
+            //例外，テーブルは表示しない
             this.condition_showtable="false";
             this.condition_pkg=null;
             this.condition_cls=null;

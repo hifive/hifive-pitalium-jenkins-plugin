@@ -3,39 +3,37 @@
 <tr><td>
 
 	<span id="ptlcondition" conditionpkg="${it.getCondition_pkg()}" conditioncls="${it.getCondition_cls()}" conditionshowtable="${it.getCondition_showtable()}"></span>
-    	<h3>配下にある画像ファイル</h3>
-	<table class="pane" id="attachments">
-		<tr>
-			<td class="pane-header">${%Files}</td>
-		</tr>
-				<tr>
-					<td class="pane">
-			<j:forEach var="attachment" items="${it.attachments}">
+    <h3>配下にある画像ファイル</h3>
+    <table class="pane" id="attachments">
+        <tr><td class="pane-header">${%Files}</td>
+        </tr>
+        <tr><td class="pane">
+            <j:forEach var="attachment" items="${it.attachments}">
+            <a class="${it.isImageFile(attachment) ? 'gallery' : ''}"
+            title="${attachment}"
+            href="attachments/${attachment}"><img src="attachments/${attachment}" width="160" /></a>
+            </j:forEach>
+        </td></tr>
+    </table>
 
-						<a class="${it.isImageFile(attachment) ? 'gallery' : ''}"
-						   title="${attachment}"
-						   href="attachments/${attachment}"><img src="attachments/${attachment}" width="160" /></a>
-
-			</j:forEach>
-					</td>
-				</tr>	</table>
+    <h3>サマリー</h3>
     <table>
            <tr><td>
-            <h3>サマリー</h3>
-            <script src="attachments/result.js"></script>
-            <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
-            <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
-            <div id="PitaResult"></div>
-            <script type="text/javascript">
-            GenSummaryTable();
-            </script>
+                <script src="attachments/result.js"></script>
+                <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
+                <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
+                <div id="PitaResult"></div>
+                <script type="text/javascript">
+                    GenSummaryTable();
+                </script>
             </td></tr>
     </table>
-	</td></tr>
-    <st:adjunct includes="hudson.plugins.jquery.colorbox" />
-    <script type="text/javascript">
-        jQuery(document).ready(function() {
-            jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150});
-        });
-    </script>
+
+</td></tr>
+<st:adjunct includes="hudson.plugins.jquery.colorbox" />
+<script type="text/javascript">
+    jQuery(document).ready(function() {
+        jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150});
+    });
+</script>
 </j:jelly>

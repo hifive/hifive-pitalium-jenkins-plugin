@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.12.2">
+  <actions>
+    <io.jenkins.blueocean.service.embedded.BlueOceanUrlAction plugin="blueocean-rest-impl@1.3.3">
+      <blueOceanUrlObject class="io.jenkins.blueocean.service.embedded.BlueOceanUrlObjectImpl">
+        <mappedUrl>blue/organizations/jenkins/Plugin-test%2FBuild</mappedUrl>
+        <modelObject class="flow-definition" reference="../../../.."/>
+      </blueOceanUrlObject>
+    </io.jenkins.blueocean.service.embedded.BlueOceanUrlAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_HOST</name>
+          <description>ivy実行時のプロキシのホスト</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PORT</name>
+          <description>ivy実行時のプロキシのポート</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_USER</name>
+          <description>ivy実行時のプロキシの認証ユーザ名</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PASSWORD</name>
+          <description>ivy実行時のプロキシの認証パスワード</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>HUB_HOST</name>
+          <description>Selenium Grid Hubのホストアドレス</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>APP_HOST</name>
+          <description>テスト対象アプリのベースURL</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.42">
+    <script>/**
+ * Build
+ * ソースコードのチェックアウト・ビルド
+ */
+node {
+    def antHome = tool(name: &apos;Default_Ant&apos;)
+    
+    stage(&apos;Checkout&apos;) {
+        git(
+			branch: &apos;dev&apos;,
+			url: &apos;https://github.com/hifive/hifive-pitalium.git&apos;
+		)
+    }
+
+	stage(&apos;Libraries download&apos;) {
+	    withEnv([&quot;ANT_OPTS=-Dhttp.proxyHost=${IVY_PROXY_HOST} -Dhttp.proxyPort=${IVY_PROXY_PORT} -Dhttp.proxyUser=${IVY_PROXY_USER} -Dhttp.proxyPassword=${IVY_PROXY_PASSWORD}&quot;]) {
+		    bat(&quot;${antHome}/bin/ant.bat -file pitalium/ivy_build.xml resolve-test &amp;&amp; exit %%ERRORLEVEL%%&quot;)
+	    }
+	}
+	    
+	stage(&apos;Setup&apos;) {
+	    createSettingFilesForAll()
+    }
+    
+    stage(&apos;Compile&apos;) {
+    	bat(&quot;${antHome}/bin/ant.bat -file pitalium/ci_build.xml clean build test_instrument &amp;&amp; exit %%ERRORLEVEL%%&quot;)
+    	// コンパイル済のソースコードを含むワークスペース全体を保存
+    	step(
+    			$class: &apos;ArtifactArchiver&apos;,
+    			artifacts: &apos;**&apos;
+    		)
+    }
+}
+
+/**
+ * CIテスト用の設定ファイルを生成する。
+ */
+def createSettingFilesForAll() {
+	// EnvironmentConfig.jsonの生成
+	writeFile(
+			encoding: &apos;UTF-8&apos;,
+			file: &apos;pitalium\\src\\test\\resources\\environmentConfig.json&apos;,
+			text: &quot;&quot;&quot;\
+{
+	&quot;execMode&quot;: &quot;SET_EXPECTED&quot;,
+	&quot;hubHost&quot;: &quot;${HUB_HOST}&quot;,
+	&quot;maxThreadExecuteTime&quot;: 3600,
+	&quot;capabilitiesFilePath&quot;: &quot;capabilities.json&quot;
+}&quot;&quot;&quot;
+			)
+	writeFile(
+			encoding: &apos;UTF-8&apos;,
+			file: &apos;pitalium\\src\\test\\resources\\environmentConfig_test.json&apos;,
+			text: &quot;&quot;&quot;\
+{
+	&quot;execMode&quot;: &quot;RUN_TEST&quot;,
+	&quot;hubHost&quot;: &quot;${HUB_HOST}&quot;,
+	&quot;maxThreadExecuteTime&quot;: 3600,
+	&quot;capabilitiesFilePath&quot;: &quot;capabilities.json&quot;
+}&quot;&quot;&quot;
+			)
+	// TestAppConfig.jsonの生成
+	writeFile(
+			encoding: &apos;UTF-8&apos;,
+			file: &apos;pitalium\\src\\test\\resources\\testAppConfig.json&apos;,
+			text: &quot;&quot;&quot;\
+{
+	&quot;baseUrl&quot;: &quot;http://${APP_HOST}/pitalium-test-site/&quot;,
+	&quot;windowHeight&quot;: 960,
+	&quot;windowWidth&quot;: 1280
+}&quot;&quot;&quot;
+			)
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

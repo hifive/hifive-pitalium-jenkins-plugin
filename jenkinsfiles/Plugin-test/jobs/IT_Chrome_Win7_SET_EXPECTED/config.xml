@@ -1,0 +1,154 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.12.2">
+  <actions>
+    <io.jenkins.blueocean.service.embedded.BlueOceanUrlAction plugin="blueocean-rest-impl@1.3.3">
+      <blueOceanUrlObject class="io.jenkins.blueocean.service.embedded.BlueOceanUrlObjectImpl">
+        <mappedUrl>blue/organizations/jenkins/Plugin-test%2FIT_Chrome_Win7_SET_EXPECTED</mappedUrl>
+        <modelObject class="flow-definition" reference="../../../.."/>
+      </blueOceanUrlObject>
+    </io.jenkins.blueocean.service.embedded.BlueOceanUrlAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_HOST</name>
+          <description>ivy実行時のプロキシのホスト</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PORT</name>
+          <description>ivy実行時のプロキシのポート</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_USER</name>
+          <description>ivy実行時のプロキシの認証ユーザ名</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PASSWORD</name>
+          <description>ivy実行時のプロキシの認証パスワード</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>HUB_HOST</name>
+          <description>Selenium Grid Hubのホストアドレス</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>APP_HOST</name>
+          <description>テスト対象アプリのベースURL</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>BROWSER_NAME</name>
+          <description>テストを実行するブラウザ</description>
+          <defaultValue>Chrome_Win7</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>ANT_PROXY_HOST</name>
+          <description>テスト実行時のプロキシのホスト</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>ANT_PROXY_PORT</name>
+          <description>テスト実行時のプロキシのポート</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.42">
+    <script>/**
+ * IT_SET_EXPECTED
+ * 結合テストをSET_EXPECTEDモードで実行する。
+ */
+node {
+	def antHome = tool(name: &apos;Default_Ant&apos;)
+
+	stage(&apos;Copy Artifact from Parent Job&apos;) {
+    	deleteDir()
+    	
+    	// テスト用ビルドファイル取得
+    	git(
+			branch: &apos;master&apos;,
+			url: &apos;https://github.com/hifive/hifive-pitalium-jenkins-plugin.git&apos;
+			)
+
+
+	    try {
+		    // 呼び出し元のrunnerジョブからビルド済のワークスペースをコピー
+		    step(
+	    			$class: &apos;CopyArtifact&apos;,
+	    			projectName: &apos;Pitalium-test-runner-mini&apos;,
+	    			filter: &apos;**&apos;,
+	    			fingerprintArtifacts: true,
+    				selector: [
+	    				$class: &apos;TriggeredBuildSelector&apos;,
+	    				allowUpstreamDependencies: false,
+	    				fallbackToLastSuccessful: false,
+	    				upstreamFilterStrategy: &apos;UseGlobalSetting&apos;
+		    		]
+		    )
+	    } catch (runnerTriggerErr) {
+		    // このジョブを単体で実行する場合は直接ビルド実行
+		    build(
+			    job: &apos;Build&apos;,
+			    parameters: [
+				    [$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_HOST&apos;, value: IVY_PROXY_HOST],
+		    		[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_PORT&apos;, value: IVY_PROXY_PORT],
+		    		[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_USER&apos;, value: IVY_PROXY_USER],
+		    		[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_PASSWORD&apos;, value: IVY_PROXY_PASSWORD],
+		    		[$class: &apos;StringParameterValue&apos;, name: &apos;HUB_HOST&apos;, value: HUB_HOST],
+		    		[$class: &apos;StringParameterValue&apos;, name: &apos;APP_HOST&apos;, value: APP_HOST]
+		    	],
+			    propagate: false
+		    )
+		    step(
+			    $class: &apos;CopyArtifact&apos;,
+	    		projectName: &apos;Build&apos;,
+	    		filter: &apos;**&apos;,
+	    		fingerprintArtifacts: true,
+	    		selector: [
+        			$class: &apos;StatusBuildSelector&apos;,
+	    			stable: false
+	    		]
+		    )
+    	}
+    	
+    	// ビルドファイルのコピー
+    	bat(&quot;copy /Y jenkinsfiles\\ci_build_mini.xml pitalium\\ci_build_mini.xml&quot;)
+    }
+
+    stage(&quot;IT (screenshot-assertion): ${BROWSER_NAME}&quot;) {
+    	// 設定ファイルのコピー
+    	bat(&quot;copy /Y pitalium\\target\\work\\test-classes\\ci\\capabilities_${BROWSER_NAME}.json pitalium\\target\\work\\test-classes\\capabilities.json&quot;)
+
+	    withEnv([&quot;ANT_OPTS=-Dant.proxy.host=${ANT_PROXY_HOST} -Dant.proxy.port=${ANT_PROXY_PORT}&quot;]) {
+	    	bat(&quot;${antHome}/bin/ant.bat -file pitalium/ci_build_mini.xml it_test_assertion_set_expected &amp;&amp; exit %%ERRORLEVEL%%&quot;)
+	    }
+    }
+
+    stage(&apos;Archive Artifact&apos;) {
+    	step(
+    		$class: &apos;JUnitResultArchiver&apos;,
+    		testResults: &apos;pitalium/target/work/test-reports/*.xml&apos;
+    	)
+	    step(
+	        $class: &apos;ArtifactArchiver&apos;,
+	    	artifacts: &apos;pitalium/target/work/test-cobertura/test-result/results/**/*&apos;
+	    )
+
+    }
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

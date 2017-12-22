@@ -2,7 +2,6 @@ package org.jenkinsci.plugins;
 
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.tasks.junit.*;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -10,6 +9,13 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Descriptor;
+import hudson.tasks.junit.TestAction;
+import hudson.tasks.junit.TestDataPublisher;
+import hudson.tasks.junit.TestResult;
+import hudson.tasks.junit.TestResultAction;
+import hudson.tasks.junit.CaseResult;
+import hudson.tasks.junit.ClassResult;
+import hudson.tasks.junit.PackageResult;
 import hudson.tasks.test.TestObject;
 
 import java.io.File;
@@ -17,10 +23,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**テスト実行後に呼び出される．*/
 public class PitaPublisher extends TestDataPublisher{
@@ -31,8 +35,7 @@ public class PitaPublisher extends TestDataPublisher{
     }
 
     public static FilePath getAttachmentPath(Run<?, ?> build) {
-        return new FilePath(new File(build.getRootDir().getAbsolutePath()))
-                .child("pictures");
+        return new FilePath(new File(build.getRootDir().getAbsolutePath())).child("pictures");
     }
 
     public static FilePath getAttachmentPath(FilePath root, String child) {
@@ -72,32 +75,39 @@ public class PitaPublisher extends TestDataPublisher{
             String packageName;
             String className;
             String testName;
+            FilePath storage=getAttachmentPath(testObject.getRun());
 
-            List<String> attachmentPaths=new ArrayList<String>();
+            List<String> picturesList=new ArrayList<String>();
             if (testObject instanceof CaseResult) {
                 packageName = testObject.getParent().getParent().getName();
+                storage=getAttachmentPath(storage,packageName);
                 className = packageName+"."+testObject.getParent().getName();
+                storage=getAttachmentPath(storage,className);
                 testName = testObject.getName();
+                storage=getAttachmentPath(storage,testName);
                 for(String var:pictures.get(packageName).get(className).get(testName)){
-                    attachmentPaths.add(packageName+"/"+className+"/"+testName+"/"+var);
+                    picturesList.add(var);
                 }
             } else if (testObject instanceof ClassResult) {
                 packageName = testObject.getParent().getName();
+                storage=getAttachmentPath(storage,packageName);
                 className = packageName+"."+testObject.getName();
+                storage=getAttachmentPath(storage,className);
                 for(Map.Entry<String,List<String>> tstCase:pictures.get(packageName).get(className).entrySet()){
                     testName=tstCase.getKey();
                     for(String var:tstCase.getValue()){
-                        attachmentPaths.add(packageName+"/"+className+"/"+testName+"/"+var);
+                        picturesList.add(testName+"/"+var);
                     }
                 }
             } else if (testObject instanceof PackageResult) {
                 packageName = testObject.getName();
+                storage=getAttachmentPath(storage,packageName);
                 for(Map.Entry<String,HashMap<String,List<String>>> tstCls:pictures.get(packageName).entrySet()){
                     className=tstCls.getKey();
                     for(Map.Entry<String,List<String>> tstCase:tstCls.getValue().entrySet()){
                         testName=tstCase.getKey();
                         for(String var:tstCase.getValue()){
-                            attachmentPaths.add(packageName+"/"+className+"/"+testName+"/"+var);
+                            picturesList.add(className+"/"+testName+"/"+var);
                         }
                     }
                 }
@@ -109,7 +119,7 @@ public class PitaPublisher extends TestDataPublisher{
                         for(Map.Entry<String,List<String>> tstCase:tstCls.getValue().entrySet()){
                             testName=tstCase.getKey();
                             for(String var:tstCase.getValue()){
-                                attachmentPaths.add(packageName+"/"+className+"/"+testName+"/"+var);
+                                picturesList.add(packageName+"/"+className+"/"+testName+"/"+var);
                             }
                         }
                     }
@@ -118,21 +128,16 @@ public class PitaPublisher extends TestDataPublisher{
                 return Collections.emptyList();
             }
 
-            String fullName = "";
-
             FilePath root = getAttachmentPath(testObject.getRun());
-            PitaTestAction action = new PitaTestAction(testObject,
-                    getAttachmentPath(root, fullName), attachmentPaths);
+            PitaTestAction action = new PitaTestAction(testObject,storage, picturesList);
             return Collections.<TestAction> singletonList(action);
         }
     }
     @Extension
     public static class DescriptorImpl extends Descriptor<TestDataPublisher> {
-
         @Override
         public String getDisplayName() {
             return "Pitaliumプラグイン";
         }
-
     }
 }

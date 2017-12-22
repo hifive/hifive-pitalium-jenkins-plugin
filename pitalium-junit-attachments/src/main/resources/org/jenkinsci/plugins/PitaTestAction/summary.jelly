@@ -23,9 +23,6 @@
                 <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
                 <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
                 <div id="PitaResult"></div>
-                <script type="text/javascript">
-                    GenSummaryTable();
-                </script>
             </td></tr>
     </table>
 
@@ -36,6 +33,7 @@
 <script type="text/javascript">
     jQuery(document).ready(function() {
         jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150,title:""});
+        GenSummaryTable();
     });
 </script>
 </j:jelly>

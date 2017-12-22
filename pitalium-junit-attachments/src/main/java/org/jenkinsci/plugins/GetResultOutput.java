@@ -12,10 +12,7 @@ import org.apache.tools.ant.DirectoryScanner;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.*;
 
 /**テスト結果から画像を抽出する．画像コピーと一覧作成を実行
@@ -103,13 +100,16 @@ public class GetResultOutput {
             ds.setBasedir(dir.getRemote());
             ds.scan();
             String pics[]=ds.getIncludedFiles();
+            ArrayList<String> dstpics=new ArrayList<>();
+            int filecounter=0;//ファイル名長すぎると500エラーになる対策
             for(String var:pics){
                 FilePath src=new FilePath(dir,var);
-                FilePath dst=new FilePath(target,var);
+                FilePath dst=new FilePath(target,filecounter+".png");
+                dstpics.add(filecounter+".png");
                 src.copyTo(dst);
+                filecounter++;
             }
-
-            return Arrays.asList(pics);
+            return dstpics;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }

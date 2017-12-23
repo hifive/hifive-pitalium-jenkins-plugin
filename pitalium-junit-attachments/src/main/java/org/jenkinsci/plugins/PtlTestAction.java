@@ -2,14 +2,16 @@ package org.jenkinsci.plugins;
 
 import hudson.FilePath;
 import hudson.model.DirectoryBrowserSupport;
-import hudson.tasks.junit.*;
 import hudson.tasks.test.TestObject;
-import jenkins.model.Jenkins;
-
+import hudson.tasks.junit.TestAction;
+import hudson.tasks.junit.TestResult;
+import hudson.tasks.junit.CaseResult;
+import hudson.tasks.junit.ClassResult;
+import hudson.tasks.junit.PackageResult;
 import java.util.List;
 
 /**テスト結果ページの表示で利用*/
-public class PitaTestAction extends TestAction {
+public class PtlTestAction extends TestAction {
 
     private final FilePath storage;
     private final List<String> attachments;
@@ -18,7 +20,7 @@ public class PitaTestAction extends TestAction {
     private final String condition_pkg;
     private final String condition_cls;
 
-    public PitaTestAction(TestObject testObject, FilePath storage, List<String> attachments) {
+    public PtlTestAction(TestObject testObject, FilePath storage, List<String> attachments) {
         this.storage = storage;
         this.testObject = testObject;
         for(int i=0;i<attachments.size();i++){//uriencorder
@@ -53,51 +55,30 @@ public class PitaTestAction extends TestAction {
     }
 
     public String getDisplayName() {
-        return "Attachments";
+        return "結果画像";
     }
-
-    public String getIconFileName() {
-        return "package.gif";
-    }
-
-    public String getUrlName() {
-        return "attachments";
-    }
-
+    public String getIconFileName() {return "package.gif";}
+    public String getUrlName() { return "attachments";}
     public DirectoryBrowserSupport doDynamic() {
-        return new DirectoryBrowserSupport(this, storage, "Attachments", "package.gif", true);
+        return new DirectoryBrowserSupport(this, storage, "結果画像", "package.gif", true);
     }
-
     @Override
-    public String annotate(String text) {
-        String url = Jenkins.getActiveInstance().getRootUrl()
-                + testObject.getRun().getUrl() + "testReport"
-                + testObject.getUrl() + "/attachments/";
-        for (String attachment : attachments) {
-            text = text.replace(attachment, "<a href=\"" + url + attachment
-                    + "\">" + attachment + "</a>");
-        }
-        return text;
-    }
+    public String annotate(String text) {return text;}
     public String getCondition_showtable() {
         return condition_showtable;
     }
-
     public String getCondition_pkg() {
         return condition_pkg;
     }
-
     public String getCondition_cls() {
         return condition_cls;
     }
     public List<String> getAttachments() {
         return attachments;
     }
-
     public TestObject getTestObject() {
         return testObject;
     }
-
     public static boolean isImageFile(String filename) {
         return filename.matches("(?i).+\\.(gif|jpe?g|png)$");
     }

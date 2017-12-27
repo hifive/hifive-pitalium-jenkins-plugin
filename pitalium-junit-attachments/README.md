@@ -15,7 +15,7 @@ Jenkinsを用いてPitaliumのリグレッションテストを行った際の�
     -  `Junitテスト結果の設定`に，`Pitaliumプラグイン`を追加
     - テスト結果画像が格納されているディレクトリの，ワークスペースからの相対パスを記入（デフォルトは`../`）
 - パイプライン使用時
-  - ビルド後のステップに`junit keepLongStdio: true, testDataPublishers: [[$class: 'PitaPublisher', resultPicsAddr: '../']], testResults: 'reports/*.xml'`を追加．
+  - ビルド後のステップに`junit keepLongStdio: true, testDataPublishers: [[$class: 'PtlPublisher', resultPicsAddr: '../']], testResults: 'reports/*.xml'`を追加．
   但し，`testResults`はxmlファイルへのパス，`resultPicsAddr`は結果画像フォルダの探索開始パスを表す．
 - ビルドを実行すると，テスト結果のページに自動的に画像と結果集計テーブルが作成されます．
 

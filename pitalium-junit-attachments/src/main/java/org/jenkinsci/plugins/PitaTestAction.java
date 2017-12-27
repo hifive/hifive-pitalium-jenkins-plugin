@@ -21,6 +21,9 @@ public class PitaTestAction extends TestAction {
     public PitaTestAction(TestObject testObject, FilePath storage, List<String> attachments) {
         this.storage = storage;
         this.testObject = testObject;
+        for(int i=0;i<attachments.size();i++){//uriencorder
+            attachments.set(i,attachments.get(i).replace("#","%23"));
+        }
         this.attachments = attachments;
         if (testObject instanceof CaseResult) {
             //ケースレベルではテーブルを表示しない

@@ -96,6 +96,7 @@ function GenSummaryTable(){
         td.setAttribute("colspan",length);
         td.setAttribute("onClick", "PitaResultExtract("+count_column+",-2)");
         td.id="pitacell_"+count_column+"_-2";
+        td.className="PitaLabel";
         titleC1=titleC1.concat(new Array(length).fill(c1));
         tr.appendChild(td);
         //2行目
@@ -105,6 +106,7 @@ function GenSummaryTable(){
             td.innerHTML=c2;
             td.setAttribute("onClick", "PitaResultExtract("+count_column+",-1)");
             td.id="pitacell_"+count_column+"_-1";
+            td.className="PitaLabel";
             titleC2.push(c2);
             tr2.appendChild(td);
             count_column++;
@@ -114,6 +116,7 @@ function GenSummaryTable(){
     td = document.createElement("td");
     td.innerHTML="TOTAL";
     td.setAttribute("rowspan",2);
+    td.className="PitaLabel";
     tr.appendChild(td);
 
     var count_row=0;//何行目？
@@ -129,6 +132,7 @@ function GenSummaryTable(){
         td.setAttribute("rowspan",Object.keys(rows[r1]).length);
         td.setAttribute("onClick", "PitaResultExtract(-2,"+count_row+")");
         td.id="pitacell_-2_"+count_row;
+        td.className="PitaLabel";
         titleR1=titleR1.concat(new Array(Object.keys(rows[r1]).length).fill(r1));
         tr3.appendChild(td);
         var notfirst=false;
@@ -143,6 +147,7 @@ function GenSummaryTable(){
             td.innerHTML=r2;
             td.setAttribute("onClick", "PitaResultExtract(-1,"+count_row+")");
             td.id="pitacell_-1_"+count_row;
+            td.className="PitaLabel";
             titleR2.push(r2);
             tr3.appendChild(td);
 
@@ -168,6 +173,7 @@ function GenSummaryTable(){
             //セル(SUBTOTAL)
             td = document.createElement("td");
             td.innerHTML=subtotal.toString();
+            td.className="PitaLabel";
             tr3.appendChild(td);
 
             notfirst=true;
@@ -182,19 +188,30 @@ function GenSummaryTable(){
     td = document.createElement("td");
     td.innerHTML="TOTAL";
     td.setAttribute("colspan",2);
+    td.className="PitaLabel";
     tr.appendChild(td);
     for(var i = 0; i<subtotal_column.length; i++){
         td = document.createElement("td");
         td.innerHTML=subtotal_column[i];
+        td.className="PitaLabel";
         tr.appendChild(td);
     }
     //総計
     td = document.createElement("td");
     td.innerHTML=total;
+    td.className="PitaLabel";
     tr.appendChild(td);
 
     element = document.getElementById("PitaResult");
     element.appendChild(table);
+
+    //Web Storageから前回選択セルを呼び出す
+    var storage = sessionStorage;
+    var value=storage.getItem(pkg+"."+cls);
+    if(value!=null){
+        var location=value.split(",");
+        PitaResultExtract(location[0],location[1]);
+    }
 }
 
 //INPUT:座標（集計数字セル左上を0,0とする）
@@ -285,5 +302,8 @@ function PitaResultExtract(column,row){
         }
     }
 
+    //Web Storageへ選択セルを保存
+    var storage = sessionStorage;
+    storage.setItem(pkg+"."+cls, column+","+row);
 
 }

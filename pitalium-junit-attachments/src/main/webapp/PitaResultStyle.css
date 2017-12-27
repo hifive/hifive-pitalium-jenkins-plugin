@@ -6,10 +6,7 @@
 font-size:small;
 }
 
-#PitaResultTable .PitaColumnLabel{
-font-weight:bold;
-}
-#PitaResultTable .PitaRowLabel{
+#PitaResultTable .PitaLabel{
 font-weight:bold;
 }
 #PitaResultTable td{

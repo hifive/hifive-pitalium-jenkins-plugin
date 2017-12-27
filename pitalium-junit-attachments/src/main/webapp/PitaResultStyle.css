@@ -1,15 +1,12 @@
-/*
-プラグインのテーブル用CSS
+﻿/*
+プラグインの結果集計テーブル用CSS
 */
 
 #PitaResultTable *{
 font-size:small;
 }
 
-#PitaResultTable .PitaColumnLabel{
-font-weight:bold;
-}
-#PitaResultTable .PitaRowLabel{
+#PitaResultTable .PitaLabel{
 font-weight:bold;
 }
 #PitaResultTable td{

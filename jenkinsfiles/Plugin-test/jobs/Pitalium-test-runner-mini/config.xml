@@ -1,0 +1,196 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.12.2">
+  <actions>
+    <io.jenkins.blueocean.service.embedded.BlueOceanUrlAction plugin="blueocean-rest-impl@1.3.3">
+      <blueOceanUrlObject class="io.jenkins.blueocean.service.embedded.BlueOceanUrlObjectImpl">
+        <mappedUrl>blue/organizations/jenkins/Plugin-test%2FPItalium-test-runner-mini</mappedUrl>
+        <modelObject class="flow-definition" reference="../../../.."/>
+      </blueOceanUrlObject>
+    </io.jenkins.blueocean.service.embedded.BlueOceanUrlAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_HOST</name>
+          <description>ivy実行時のプロキシのホスト</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PORT</name>
+          <description>ivy実行時のプロキシのポート</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_USER</name>
+          <description>ivy実行時のプロキシの認証ユーザ名</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IVY_PROXY_PASSWORD</name>
+          <description>ivy実行時のプロキシの認証パスワード</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>HUB_HOST</name>
+          <description>Selenium Grid Hubのホストアドレス</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>APP_HOST</name>
+          <description>テスト対象アプリのベースURL</description>
+          <defaultValue>localhost</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>WINDOWS7_IE11</name>
+          <description>IE11でテストを実行するか否か</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>Windows7_Chrome</name>
+          <description>WindowsのChromeでテストを実行するか否か</description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>Windows7_Firefox</name>
+          <description>WindowsのFirefoxでテストを実行するか否か</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>ANT_PROXY_HOST</name>
+          <description>テスト実行時のプロキシのホスト</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>ANT_PROXY_PORT</name>
+          <description>テスト実行時のプロキシのポート</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.42">
+    <script>/**
+ * Pitalium-test-runner-mini
+ * プラグイン動作確認用の最小構成ジョブ
+ */
+node {
+    def antHome = tool(name: &apos;Default_Ant&apos;)
+    
+    /**
+     * ソースコードのチェックアウト・ビルド
+     */
+    stage(&apos;Build&apos;) {
+        build(
+			job: &apos;Build&apos;,
+			parameters: [
+				[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_HOST&apos;, value: IVY_PROXY_HOST],
+				[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_PORT&apos;, value: IVY_PROXY_PORT],
+				[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_USER&apos;, value: IVY_PROXY_USER],
+				[$class: &apos;StringParameterValue&apos;, name: &apos;IVY_PROXY_PASSWORD&apos;, value: IVY_PROXY_PASSWORD],
+				[$class: &apos;StringParameterValue&apos;, name: &apos;HUB_HOST&apos;, value: HUB_HOST],
+				[$class: &apos;StringParameterValue&apos;, name: &apos;APP_HOST&apos;, value: APP_HOST]
+			],
+			propagate: false
+	    )
+	    
+	    step(
+			$class: &apos;CopyArtifact&apos;,
+			projectName: &apos;Build&apos;,
+			filter: &apos;**&apos;,
+			fingerprintArtifacts: true,
+			selector: [
+				$class: &apos;StatusBuildSelector&apos;,
+				stable: false
+				]
+		)
+	    step(
+			$class: &apos;ArtifactArchiver&apos;,
+			artifacts: &apos;**&apos;
+		)
+    }
+    
+    /**
+     * テスト実行
+     */
+    stage(&apos;Test&apos;) {
+        parallel(
+            IE11_Win7: {
+                if (Windows7_IE11 == &apos;true&apos;) {
+					buildITJob(&apos;IE11_Win7&apos;)
+				}
+            },
+            Chrome_Win7: {
+				if (Windows7_Chrome == &apos;true&apos;) {
+					buildITJob(&apos;Chrome_Win7&apos;)
+				}
+			},
+			FF_Win7: {
+				if (Windows7_Firefox == &apos;true&apos;) {
+					buildITJob(&apos;FF_Win7&apos;)
+				}
+			},
+			failFast: false
+        )
+    }
+    
+    stage(&apos;Reporting&apos;) {
+        def reportPath = &apos;reports&apos;
+        if (Windows7_IE11 == &apos;true&apos;) {
+            copyReportFromJob(&apos;IT_IE11_Win7&apos;, reportPath)
+        }
+        if (Windows7_Chrome == &apos;true&apos;) {
+            copyReportFromJob(&apos;IT_Chrome_Win7&apos;, reportPath)
+        }
+        if (Windows7_Firefox == &apos;true&apos;) {
+            copyReportFromJob(&apos;IT_FF_Win7&apos;, reportPath)
+        }
+        
+        step(
+			$class: &apos;JUnitResultArchiver&apos;,
+			testResults: &quot;${reportPath}/*.xml&quot;
+		)
+    }
+}
+
+/**
+ * 指定されたブラウザのITジョブを実行する。
+ */
+def buildITJob(browserName) {
+	build(
+		job: &quot;IT_${browserName}&quot;,
+		parameters: [
+		    [$class: &apos;StringParameterValue&apos;, name: &apos;HUB_HOST&apos;, value: HUB_HOST],
+			[$class: &apos;StringParameterValue&apos;, name: &apos;APP_HOST&apos;, value: APP_HOST],
+			[$class: &apos;StringParameterValue&apos;, name: &apos;ANT_PROXY_HOST&apos;, value: ANT_PROXY_HOST],
+			[$class: &apos;StringParameterValue&apos;, name: &apos;ANT_PROXY_PORT&apos;, value: ANT_PROXY_PORT]
+		],
+		propagate: false
+	)
+}
+
+/**
+ * 指定されたジョブの成果物（テストレポート）を取得する。
+ */
+def copyReportFromJob(jobName, reportPath) {
+	step(
+		$class: &apos;CopyArtifact&apos;,
+		projectName: jobName,
+		filter: &apos;pitalium/target/work/test-reports/**/*.xml&apos;,
+		fingerprintArtifacts: true,
+		flatten: true,
+    	selector: [$class: &apos;WorkspaceSelector&apos;],
+		target: reportPath
+	)
+}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

@@ -30,10 +30,12 @@
     </table>
 
 </td></tr>
-<st:adjunct includes="hudson.plugins.jquery.colorbox" />
+
+<link href="${rootURL}/plugin/PitaJenkinsPlugin/colorbox.css" rel="stylesheet" />
+<script src="${rootURL}/plugin/PitaJenkinsPlugin/jquery.colorbox.js"></script>
 <script type="text/javascript">
     jQuery(document).ready(function() {
-        jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150});
+        jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150,title:""});
     });
 </script>
 </j:jelly>

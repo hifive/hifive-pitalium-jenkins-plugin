@@ -30,10 +30,10 @@ Jenkins ( https://jenkins.io/ ) を用いてPitaliumのリグレッションテ�
 - 探索画像ファイル名は，テストケース名の規則`テストメソッド名[Capabilities [{capability=var, capability=var...}]]`を仮定
   - ディレクトリ内から，次のパターン`テストメソッド名_*_{platform}_{browser}*png`と一致する画像ファイルを抽出します．
 
-### License
+## License
 This product is licensed under the Apache License, Version 2.0.  
 http://www.apache.org/licenses/LICENSE-2.0
 
-### About Pitalium
-Our product "Pitalium" developer site is located at  
+## About Pitalium
+Our product "Pitalium" developer site is located at
 http://www.htmlhifive.com/conts/web/view/pitalium/

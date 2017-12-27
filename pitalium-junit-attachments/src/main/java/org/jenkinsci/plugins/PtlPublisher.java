@@ -27,10 +27,14 @@ import java.util.List;
 import java.util.Map;
 
 /**テスト実行後に呼び出される．*/
-public class PitaPublisher extends TestDataPublisher{
+public class PtlPublisher extends TestDataPublisher{
+    public String getResultPicsAddr() {
+        return resultPicsAddr;
+    }
+
     private final String resultPicsAddr;
     @DataBoundConstructor
-    public PitaPublisher(String resultPicsAddr){
+    public PtlPublisher(String resultPicsAddr){
         this.resultPicsAddr=resultPicsAddr;
     }
 
@@ -128,8 +132,7 @@ public class PitaPublisher extends TestDataPublisher{
                 return Collections.emptyList();
             }
 
-            FilePath root = getAttachmentPath(testObject.getRun());
-            PitaTestAction action = new PitaTestAction(testObject,storage, picturesList);
+            PtlTestAction action = new PtlTestAction(testObject,storage, picturesList);
             return Collections.<TestAction> singletonList(action);
         }
     }

@@ -32,7 +32,7 @@ public class GetResultOutput {
         this.build = build;
         this.testResult = testResult;
         this.listener = listener;
-        this.attachmentsStorage = PitaPublisher.getAttachmentPath(build);
+        this.attachmentsStorage = PtlPublisher.getAttachmentPath(build);
         this.workspace = workspace;
         this.resultPicsAddr= resultPicsAddr;
     }
@@ -64,15 +64,16 @@ public class GetResultOutput {
                     json_package.get(pkgName).get(clsName).put(caseName,json_capabilities);
 
                     //結果格納用フォルダの作成
-                    FilePath target = PitaPublisher.getAttachmentPath(attachmentsStorage, pkgName);
-                    target = PitaPublisher.getAttachmentPath(target,clsName);
-                    target = PitaPublisher.getAttachmentPath(target,caseName);
+                    FilePath target = PtlPublisher.getAttachmentPath(attachmentsStorage, pkgName);
+                    target = PtlPublisher.getAttachmentPath(target,clsName);
+                    target = PtlPublisher.getAttachmentPath(target,caseName);
                     target.mkdirs();
 
-                    pictures_map.get(pkgName).get(clsName).put(caseName,SearchPictures(suiteResult,caseName,target));
+                    //pictures_map.get(pkgName).get(clsName).put(caseName,SearchPictures(suiteResult,caseName,target));
+                    pictures_map.get(pkgName).get(clsName).put(caseName,SearchPicturesWithPruning(suiteResult,caseName,target));
                 }
             }
-            FilePath resultjspath = PitaPublisher.getAttachmentPath(attachmentsStorage, "result.js");
+            FilePath resultjspath = PtlPublisher.getAttachmentPath(attachmentsStorage, "result.js");
             resultjspath.write("var resultdata="+gson.toJson(json_package),null);
             return  pictures_map;
         } catch (IOException | InterruptedException e) {
@@ -85,11 +86,9 @@ public class GetResultOutput {
     //TODO チェック：ファイル操作
     private List<String> SearchPictures(SuiteResult suiteResult,String caseName,FilePath target){
         FilePath resultDirectory=new FilePath(workspace,resultPicsAddr);
-
-        String keyword=getTestName(caseName,getCapbilities(caseName));
-        String directory=getSearchDirectory(suiteResult.getStdout());
-        if(directory==null || keyword==null)return Collections.emptyList();
-        FilePath dir = new FilePath(resultDirectory,directory);
+        String keyword=getTestName(caseName,getCapbilities(caseName),suiteResult);
+        if(keyword==null)return Collections.emptyList();
+        FilePath dir = resultDirectory;
         try {
             if(!dir.exists()){
                 System.err.println(dir+" does not exist.");
@@ -115,17 +114,60 @@ public class GetResultOutput {
         }
         return Collections.emptyList();
     }
+    /**探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成
+     * 探索に当たって，探索ディレクトリの枝切りを行う
+     * Assump：basedir/PJ名（任意）/pitalium/target/work/test-cobertura/test-result/results/日付以下　のファイル構成*/
+    private List<String> SearchPicturesWithPruning(SuiteResult suiteResult,String caseName,FilePath target){
+        FilePath resultDirectory=new FilePath(workspace,resultPicsAddr);
+        String keyword=getTestName(caseName,getCapbilities(caseName),suiteResult);//日付/クラス/ワイルドカード.png
+        if(keyword==null)return Collections.emptyList();
+        try {
+            List<FilePath> dirs= resultDirectory.listDirectories();
+            ArrayList<String> dstpics=new ArrayList<>();
+           for(FilePath dir:dirs){
+               dir=new FilePath(dir,"pitalium/target/work/test-cobertura/test-result/results/");
+               if(!dir.exists()){
+                   System.err.println(dir+" does not exist. continue next loop.");
+                   continue;
+               }
+               final DirectoryScanner ds = new DirectoryScanner();
+               ds.setIncludes(new String[]{keyword});
+               ds.setBasedir(dir.getRemote());
+               ds.scan();
+               String pics[]=ds.getIncludedFiles();
+               for(String var:pics){
+                   FilePath src=new FilePath(dir,var);
+                   var= new File(var).getName();
+                   dstpics.add(var);
+                   FilePath dst=new FilePath(target,var);
+                   src.copyTo(dst);
+               }
+           }
+            return dstpics;
+        } catch (IOException|InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
 
     /**標準出力から探索ディレクトリを切り出し
-     * @return String 探索する相対パス*/
+     * @return String 探索する相対パス(パスの区切りは/に置換)*/
     //TODO チェック：パス操作
     // FILEPATH型じゃないString型で\つきパスを返すので，リモートでも動くか要確認．
-    private String getSearchDirectory(String stdout){
-        String str=stdout.substring(stdout.lastIndexOf("[Save TestResult]"));
+    private String getSearchDirectory(SuiteResult suiteResult){
+        String stdout=suiteResult.getStdout();
+        int loc=stdout.lastIndexOf("[Save TestResult]");
+        if (loc==-1){
+            System.err.println("Fail to find out [Save TestResult] in "+suiteResult.getName()+".");
+            return null;
+        }
+        String str=stdout.substring(loc);
         Pattern p =Pattern.compile("\\\\((\\d|_){19}\\\\.*)\\\\result.json");
         Matcher m=p.matcher(str);
         if(m.find()){
-            return m.group(1);
+            String res=m.group(1);
+            res=res.replace("\\","/");
+            return res;
         }else{
             System.err.println("[Exception]Fail to tokenize "+str+". Following step in this case was skipped.");
             return null;
@@ -133,12 +175,18 @@ public class GetResultOutput {
     }
     /**テストケース名から，探索すべき画像名（ワイルドカード付）を作成
      * @return String 検索するファイル名*/
-    private String getTestName(String testName,HashMap<String,String> capbilities){
+    private String getTestName(String testName,HashMap<String,String> capbilities,SuiteResult suiteResult){
+        String directory=getSearchDirectory(suiteResult);
+        if(directory==null){
+            directory="";
+        }
         Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities.*\\]$");
         Matcher m = p.matcher(testName);
         if (m.find()) {
             StringBuilder buff = new StringBuilder();
-            buff.append("**/"+m.group(1)+"_*_");
+            buff.append("**/");
+            buff.append(directory);
+            buff.append("/"+m.group(1)+"_*_");
             if (capbilities.get("platform")!=null){
                 buff.append(capbilities.get("platform"));
             }

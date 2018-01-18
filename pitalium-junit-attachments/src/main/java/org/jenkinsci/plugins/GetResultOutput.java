@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,29 +29,39 @@ import hudson.tasks.junit.TestResult;
  */
 public class GetResultOutput {
 
-	private final Run<?, ?> build;
 	private final TestResult testResult;
 	private final FilePath attachmentsStorage;
-	private final TaskListener listener;
 	private final FilePath workspace;
 	private final String resultPicsAddr;
 
-	public GetResultOutput(Run<?, ?> build, @Nonnull FilePath workspace, @SuppressWarnings("unused") Launcher launcher,
+	/**
+	 * コンストラクタ
+	 * 
+	 * @param build Run contributing test data
+	 * @param workspace Run workspace
+	 * @param launcher Launcher
+	 * @param listener Listener
+	 * @param testResult Test result
+	 * @param resultPicsAddr 結果画像フォルダの探索開始パス
+	 */
+	public GetResultOutput(Run<?, ?> build, @Nonnull FilePath workspace, Launcher launcher,
 			TaskListener listener, TestResult testResult, String resultPicsAddr) {
-		this.build = build;
 		this.testResult = testResult;
-		this.listener = listener;
 		this.attachmentsStorage = PtlPublisher.getAttachmentPath(build);
 		this.workspace = workspace;
 		this.resultPicsAddr = resultPicsAddr;
 	}
 
-	/** 画像の検索と画像コピー，画像リスト作成および，結果用jsonファイルの作成 */
-	public HashMap<String, HashMap<String, HashMap<String, List<String>>>> getPictures() {
+	/**
+	 * 画像の検索と画像コピー，画像リスト作成および，結果用jsonファイルの作成
+	 * 
+	 * @return pictures Map
+	 */
+	public Map<String, Map<String, Map<String, List<String>>>> getPictures() {
 		//注意：重複メソッド名はない仮定（上書きされる）
 		Gson gson = new Gson();
-		HashMap<String, HashMap<String, HashMap<String, HashMap<String, String>>>> json_package = new HashMap<>();
-		HashMap<String, HashMap<String, HashMap<String, List<String>>>> pictures_map = new HashMap<>();
+		Map<String, Map<String, Map<String, Map<String, String>>>> jsonPackage = new HashMap<>();
+		Map<String, Map<String, Map<String, List<String>>>> pictures_map = new HashMap<>();
 
 		try {
 			for (SuiteResult suiteResult : testResult.getSuites()) {
@@ -58,18 +69,18 @@ public class GetResultOutput {
 					String pkgName = caseResult.getPackageName();
 					String clsName = caseResult.getClassName();
 					String caseName = caseResult.getName();
-					if (!json_package.containsKey(pkgName)) {
-						json_package.put(pkgName, new HashMap<String, HashMap<String, HashMap<String, String>>>());
-						pictures_map.put(pkgName, new HashMap<String, HashMap<String, List<String>>>());
+					if (!jsonPackage.containsKey(pkgName)) {
+						jsonPackage.put(pkgName, new HashMap<String, Map<String, Map<String, String>>>());
+						pictures_map.put(pkgName, new HashMap<String, Map<String, List<String>>>());
 					}
-					if (!json_package.get(pkgName).containsKey(clsName)) {
-						json_package.get(pkgName).put(clsName, new HashMap<String, HashMap<String, String>>());
+					if (!jsonPackage.get(pkgName).containsKey(clsName)) {
+						jsonPackage.get(pkgName).put(clsName, new HashMap<String, Map<String, String>>());
 						pictures_map.get(pkgName).put(clsName, new HashMap<String, List<String>>());
 					}
-					HashMap<String, String> json_capabilities = new HashMap<>();
+					Map<String, String> json_capabilities = new HashMap<>();
 					json_capabilities.putAll(getCapbilities(caseName));
 					json_capabilities.putAll(getErrorInfo(caseResult));
-					json_package.get(pkgName).get(clsName).put(caseName, json_capabilities);
+					jsonPackage.get(pkgName).get(clsName).put(caseName, json_capabilities);
 
 					//結果格納用フォルダの作成
 					FilePath target = PtlPublisher.getAttachmentPath(attachmentsStorage, pkgName);
@@ -79,11 +90,11 @@ public class GetResultOutput {
 
 					//pictures_map.get(pkgName).get(clsName).put(caseName,SearchPictures(suiteResult,caseName,target));
 					pictures_map.get(pkgName).get(clsName).put(caseName,
-							SearchPicturesWithPruning(suiteResult, caseName, target));
+							searchPicturesWithPruning(suiteResult, caseName, target));
 				}
 			}
 			FilePath resultjspath = PtlPublisher.getAttachmentPath(attachmentsStorage, "result.js");
-			resultjspath.write("var resultdata=" + gson.toJson(json_package), null);
+			resultjspath.write("var resultdata=" + gson.toJson(jsonPackage), null);
 			return pictures_map;
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -93,7 +104,7 @@ public class GetResultOutput {
 
 	/** 探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成 */
 	//TODO チェック：ファイル操作
-	private List<String> SearchPictures(SuiteResult suiteResult, String caseName, FilePath target) {
+	/* private List<String> SearchPictures(SuiteResult suiteResult, String caseName, FilePath target) {
 		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
 		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);
 		if (keyword == null)
@@ -123,37 +134,42 @@ public class GetResultOutput {
 			e.printStackTrace();
 		}
 		return Collections.emptyList();
-	}
+	}*/
 
 	/**
-	 * 探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成 探索に当たって，探索ディレクトリの枝切りを行う
+	 * 探索ディレクトリから画像ファイルを検索して，コピーし，
+	 * ファイル名の一覧を作成 探索に当たって，探索ディレクトリの枝切りを行う
 	 * Assump：basedir/PJ名（任意）/pitalium/target/work/test-cobertura/test-result/results/日付以下 のファイル構成
 	 */
-	private List<String> SearchPicturesWithPruning(SuiteResult suiteResult, String caseName, FilePath target) {
+	private List<String> searchPicturesWithPruning(SuiteResult suiteResult, String caseName, FilePath target) {
 		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
-		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);//日付/クラス/ワイルドカード.png
+		// 日付/クラス/ワイルドカード.png
+		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);
 		if (keyword == null)
 			return Collections.emptyList();
 		try {
 			List<FilePath> dirs = resultDirectory.listDirectories();
 			ArrayList<String> dstpics = new ArrayList<>();
+			FilePath resultsDir = null;
 			for (FilePath dir : dirs) {
-				dir = new FilePath(dir, "pitalium/target/work/test-cobertura/test-result/results/");
-				if (!dir.exists()) {
-					System.err.println(dir + " does not exist. continue next loop.");
+				resultsDir = new FilePath(dir, "pitalium/target/work/test-cobertura/test-result/results/");
+				if (!resultsDir.exists()) {
+					System.err.println(resultsDir + " does not exist. continue next loop.");
 					continue;
 				}
 				final DirectoryScanner ds = new DirectoryScanner();
 				ds.setIncludes(new String[] { keyword });
-				ds.setBasedir(dir.getRemote());
+				ds.setBasedir(resultsDir.getRemote());
 				ds.scan();
 				String pics[] = ds.getIncludedFiles();
+				String fileName = null;
 				for (String var : pics) {
-					FilePath src = new FilePath(dir, var);
-					var = new File(var).getName();
-					dstpics.add(var);
-					FilePath dst = new FilePath(target, var);
+					fileName = new File(var).getName();
+					FilePath dst = new FilePath(target, fileName);
+					FilePath src = new FilePath(resultsDir, var);
 					src.copyTo(dst);
+
+					dstpics.add(fileName);
 				}
 			}
 			return dstpics;
@@ -195,7 +211,7 @@ public class GetResultOutput {
 	 *
 	 * @return String 検索するファイル名
 	 */
-	private String getTestName(String testName, HashMap<String, String> capbilities, SuiteResult suiteResult) {
+	private String getTestName(String testName, Map<String, String> capbilities, SuiteResult suiteResult) {
 		String directory = getSearchDirectory(suiteResult);
 		if (directory == null) {
 			directory = "";
@@ -227,46 +243,49 @@ public class GetResultOutput {
 	}
 
 	/**
-	 * テストケース名から，端末情報のマップを作成 Capbilitiesの要素が，os=WINDOWSのように=がついた構造になってない場合，例外発生．
+	 * テストケース名から，端末情報のマップを作成 Capbilitiesの要素が，
+	 * os=WINDOWSのように=がついた構造になってない場合，例外発生．
 	 */
-	private HashMap<String, String> getCapbilities(String testName) {
-		HashMap<String, String> capbility_map = new HashMap<String, String>();
+	private Map<String, String> getCapbilities(String testName) {
+		Map<String, String> capabilityMap = new HashMap<String, String>();
 		Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities\\s?\\[\\{(.*)\\}\\]\\]$");
 		Matcher m = p.matcher(testName);
 		if (m.find()) {
 			String[] token = m.group(2).split(", ");
 			for (int i = 0; i < token.length; i++) {
 				String[] caps = token[i].split("=");
-				capbility_map.put(caps[0], caps[1]);
+				capabilityMap.put(caps[0], caps[1]);
 			}
 		}
-		return capbility_map;
+		return capabilityMap;
 	}
 
 	/**
-	 * エラー情報を返す 成功やスキップ時には，エラー名にSUCCESS，SKIPPEDが格納される． エラー名はスタックトレースの1行目，エラー箇所はat～～の最初の行を抽出
+	 * エラー情報を返す 成功やスキップ時には，エラー名にSUCCESS，SKIPPEDが格納される． 
+	 * エラー名はスタックトレースの1行目，エラー箇所はat～～の最初の行を抽出
 	 */
-	private HashMap<String, String> getErrorInfo(CaseResult caseResult) {
-		HashMap<String, String> error_map = new HashMap<String, String>();
+	private Map<String, String> getErrorInfo(CaseResult caseResult) {
+		Map<String, String> errorMap = new HashMap<String, String>();
 		if (caseResult.isSkipped()) {
-			error_map.put("errName", "SKIPPED");
-			error_map.put("errLocation", "SKIPPED");
+			errorMap.put("errName", "SKIPPED");
+			errorMap.put("errLocation", "SKIPPED");
 		} else if (caseResult.isPassed()) {
-			error_map.put("errName", "SUCCESS");
-			error_map.put("errLocation", "SUCCESS");
-		} else {//ERROR
+			errorMap.put("errName", "SUCCESS");
+			errorMap.put("errLocation", "SUCCESS");
+		} else {
+			//ERROR
 			String trace = caseResult.getErrorStackTrace();
 			String[] traceLine = trace.split("(\r)?\n");
-			error_map.put("errName", traceLine[0].split(":")[0]);
+			errorMap.put("errName", traceLine[0].split(":")[0]);
 			Pattern p = Pattern.compile("\\A\\t?at\\s?(.+)");
 			for (String line : traceLine) {
 				Matcher m = p.matcher(line);
 				if (m.find()) {
-					error_map.put("errLocation", m.group(1));
+					errorMap.put("errLocation", m.group(1));
 					break;
 				}
 			}
 		}
-		return error_map;
+		return errorMap;
 	}
 }

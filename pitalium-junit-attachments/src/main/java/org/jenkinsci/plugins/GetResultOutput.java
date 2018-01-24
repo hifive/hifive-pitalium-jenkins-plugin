@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +36,7 @@ public class GetResultOutput {
 
 	/**
 	 * コンストラクタ
-	 * 
+	 *
 	 * @param build Run contributing test data
 	 * @param workspace Run workspace
 	 * @param launcher Launcher
@@ -44,8 +44,8 @@ public class GetResultOutput {
 	 * @param testResult Test result
 	 * @param resultPicsAddr 結果画像フォルダの探索開始パス
 	 */
-	public GetResultOutput(Run<?, ?> build, @Nonnull FilePath workspace, Launcher launcher,
-			TaskListener listener, TestResult testResult, String resultPicsAddr) {
+	public GetResultOutput(Run<?, ?> build, @Nonnull FilePath workspace, Launcher launcher, TaskListener listener,
+			TestResult testResult, String resultPicsAddr) {
 		this.testResult = testResult;
 		this.attachmentsStorage = PtlPublisher.getAttachmentPath(build);
 		this.workspace = workspace;
@@ -54,14 +54,14 @@ public class GetResultOutput {
 
 	/**
 	 * 画像の検索と画像コピー，画像リスト作成および，結果用jsonファイルの作成
-	 * 
+	 *
 	 * @return pictures Map
 	 */
 	public Map<String, Map<String, Map<String, List<String>>>> getPictures() {
 		//注意：重複メソッド名はない仮定（上書きされる）
 		Gson gson = new Gson();
 		Map<String, Map<String, Map<String, Map<String, String>>>> jsonPackage = new HashMap<>();
-		Map<String, Map<String, Map<String, List<String>>>> pictures_map = new HashMap<>();
+		Map<String, Map<String, Map<String, List<String>>>> picturesMap = new HashMap<>();
 
 		try {
 			for (SuiteResult suiteResult : testResult.getSuites()) {
@@ -71,16 +71,16 @@ public class GetResultOutput {
 					String caseName = caseResult.getName();
 					if (!jsonPackage.containsKey(pkgName)) {
 						jsonPackage.put(pkgName, new HashMap<String, Map<String, Map<String, String>>>());
-						pictures_map.put(pkgName, new HashMap<String, Map<String, List<String>>>());
+						picturesMap.put(pkgName, new HashMap<String, Map<String, List<String>>>());
 					}
 					if (!jsonPackage.get(pkgName).containsKey(clsName)) {
 						jsonPackage.get(pkgName).put(clsName, new HashMap<String, Map<String, String>>());
-						pictures_map.get(pkgName).put(clsName, new HashMap<String, List<String>>());
+						picturesMap.get(pkgName).put(clsName, new HashMap<String, List<String>>());
 					}
-					Map<String, String> json_capabilities = new HashMap<>();
-					json_capabilities.putAll(getCapbilities(caseName));
-					json_capabilities.putAll(getErrorInfo(caseResult));
-					jsonPackage.get(pkgName).get(clsName).put(caseName, json_capabilities);
+					Map<String, String> jsonCapabilities = new HashMap<>();
+					jsonCapabilities.putAll(getCapbilities(caseName));
+					jsonCapabilities.putAll(getErrorInfo(caseResult));
+					jsonPackage.get(pkgName).get(clsName).put(caseName, jsonCapabilities);
 
 					//結果格納用フォルダの作成
 					FilePath target = PtlPublisher.getAttachmentPath(attachmentsStorage, pkgName);
@@ -89,52 +89,18 @@ public class GetResultOutput {
 					target.mkdirs();
 
 					//pictures_map.get(pkgName).get(clsName).put(caseName,SearchPictures(suiteResult,caseName,target));
-					pictures_map.get(pkgName).get(clsName).put(caseName,
+					picturesMap.get(pkgName).get(clsName).put(caseName,
 							searchPicturesWithPruning(suiteResult, caseName, target));
 				}
 			}
 			FilePath resultjspath = PtlPublisher.getAttachmentPath(attachmentsStorage, "result.js");
 			resultjspath.write("var resultdata=" + gson.toJson(jsonPackage), null);
-			return pictures_map;
+			return picturesMap;
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-
-	/** 探索ディレクトリから画像ファイルを検索して，コピーし，ファイル名の一覧を作成 */
-	//TODO チェック：ファイル操作
-	/* private List<String> SearchPictures(SuiteResult suiteResult, String caseName, FilePath target) {
-		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
-		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);
-		if (keyword == null)
-			return Collections.emptyList();
-		FilePath dir = resultDirectory;
-		try {
-			if (!dir.exists()) {
-				System.err.println(dir + " does not exist.");
-				return Collections.emptyList();
-			}
-			final DirectoryScanner ds = new DirectoryScanner();
-			ds.setIncludes(new String[] { keyword });
-			ds.setBasedir(dir.getRemote());
-			ds.scan();
-			String pics[] = ds.getIncludedFiles();
-			ArrayList<String> dstpics = new ArrayList<>();
-			int filecounter = 0;//ファイル名長すぎると500エラーになる対策
-			for (String var : pics) {
-				FilePath src = new FilePath(dir, var);
-				FilePath dst = new FilePath(target, filecounter + ".png");
-				dstpics.add(filecounter + ".png");
-				src.copyTo(dst);
-				filecounter++;
-			}
-			return dstpics;
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
-		return Collections.emptyList();
-	}*/
 
 	/**
 	 * 探索ディレクトリから画像ファイルを検索して，コピーし，
@@ -145,8 +111,9 @@ public class GetResultOutput {
 		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
 		// 日付/クラス/ワイルドカード.png
 		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);
-		if (keyword == null)
+		if (keyword == null) {
 			return Collections.emptyList();
+		}
 		try {
 			List<FilePath> dirs = resultDirectory.listDirectories();
 			ArrayList<String> dstpics = new ArrayList<>();
@@ -261,7 +228,7 @@ public class GetResultOutput {
 	}
 
 	/**
-	 * エラー情報を返す 成功やスキップ時には，エラー名にSUCCESS，SKIPPEDが格納される． 
+	 * エラー情報を返す 成功やスキップ時には，エラー名にSUCCESS，SKIPPEDが格納される．
 	 * エラー名はスタックトレースの1行目，エラー箇所はat～～の最初の行を抽出
 	 */
 	private Map<String, String> getErrorInfo(CaseResult caseResult) {

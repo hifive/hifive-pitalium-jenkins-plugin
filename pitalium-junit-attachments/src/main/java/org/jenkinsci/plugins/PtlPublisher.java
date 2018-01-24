@@ -1,7 +1,11 @@
 package org.jenkinsci.plugins;
 
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -10,21 +14,16 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Descriptor;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.tasks.junit.CaseResult;
+import hudson.tasks.junit.ClassResult;
+import hudson.tasks.junit.PackageResult;
 import hudson.tasks.junit.TestAction;
 import hudson.tasks.junit.TestDataPublisher;
 import hudson.tasks.junit.TestResult;
 import hudson.tasks.junit.TestResultAction;
-import hudson.tasks.junit.CaseResult;
-import hudson.tasks.junit.ClassResult;
-import hudson.tasks.junit.PackageResult;
 import hudson.tasks.test.TestObject;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.List;
 
 /** テスト実行後に呼び出される． */
 public class PtlPublisher extends TestDataPublisher {
@@ -33,7 +32,7 @@ public class PtlPublisher extends TestDataPublisher {
 
 	/**
 	 * コンストラクタ
-	 * 
+	 *
 	 * @param resultPicsAddr 結果画像フォルダの探索開始パス
 	 */
 	@DataBoundConstructor
@@ -93,7 +92,7 @@ public class PtlPublisher extends TestDataPublisher {
 
 		/**
 		 * コンストラクタ
-		 * 
+		 *
 		 * @param pictures pictures information
 		 */
 		public Data(Map<String, Map<String, Map<String, List<String>>>> pictures) {
@@ -162,7 +161,7 @@ public class PtlPublisher extends TestDataPublisher {
 			}
 
 			PtlTestAction action = new PtlTestAction(testObject, storage, picturesList);
-			return Collections.<TestAction> singletonList(action);
+			return Collections.<TestAction>singletonList(action);
 		}
 	}
 

@@ -638,6 +638,11 @@ public class GetResultOutputTest {
 	@Test
 	public void testGetPictures_empty() throws Exception {
 		String resultPicsAddr = "src/test/resources/captured/empty";
+		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
+		if (!resultDirectory.exists()) {
+			resultDirectory.mkdirs();
+		}
+
 		Map<String, Map<String, List<String>>> testData = prepareSampleTestMap();
 		prepareTestData(testData, resultPicsAddr,
 				DEFAULT_CAPATILITIES, true, false);

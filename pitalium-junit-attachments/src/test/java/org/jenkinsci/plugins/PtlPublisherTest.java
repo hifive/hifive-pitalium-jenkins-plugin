@@ -168,6 +168,9 @@ public class PtlPublisherTest {
 		List<CaseResult> lstCaseResult = new ArrayList<CaseResult>();
 		lstCaseResult.add(caseResult);
 		when(suiteResult.getCases()).thenReturn(lstCaseResult);
+		when(suiteResult.getStdout()).thenReturn(
+				"18/01/11 18:47:08.640 [main] DEBUG com.htmlhifive.pitalium.core.io.FilePersister"
+						+ " - [Save TestResult] (test-result\\results\\2018_01_11_18_47_11\\CompareScrollBorderElementTest\\result.json)");
 		List<SuiteResult> lstSuiteResult = new ArrayList<SuiteResult>();
 		lstSuiteResult.add(suiteResult);
 		when(testResult.getSuites()).thenReturn(lstSuiteResult);

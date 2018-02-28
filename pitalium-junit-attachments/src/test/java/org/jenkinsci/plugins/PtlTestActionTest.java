@@ -16,7 +16,9 @@ import hudson.tasks.test.TestObject;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jenkins.model.Jenkins;
 
@@ -68,9 +70,11 @@ public class PtlTestActionTest {
 
 	private static final String ATTACHMENT_HTML = "<a href=\"http://localhost:8080/jenkins/ownertestReport/testObject/attachments/{0}\">{0}</a>";
 
-	private static final String TEST_CLASS_NAME = "testClassName";
-
 	private static final String TEST_PACKAGE_NAME = "test.package.name";
+
+	private static final String TEST_CLASS_NAME = TEST_PACKAGE_NAME + ".testClassName";
+
+	private static final String TEST_CASE_NAME = "testCaseName";
 
 	@Mock
 	private Jenkins jenkins;
@@ -87,11 +91,27 @@ public class PtlTestActionTest {
 			attachments.add(PICTURE1);
 			attachments.add(PICTURE2);
 			attachments.add(PICTURE3);
+			Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 			FilePath storage = new FilePath(new File("../"));
 			TestObject testObject = PowerMockito.mock(TestObject.class);
 
-			testAction = new PtlTestAction(testObject, storage, attachments);
+			testAction = new PtlTestAction(testObject, storage, pictureMap);
 		}
+	}
+
+	/**
+	 * Create pictures map
+	 * 
+	 * @param lstPictures list of pictures
+	 * @return pictures map
+	 */
+	private Map<String, Map<String, List<String>>> createPictureMap(List<String> lstPictures) {
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
+		Map<String, List<String>> caseMap = new HashMap<String, List<String>>();
+		caseMap.put(TEST_CASE_NAME, lstPictures);
+		pictureMap.put(TEST_CLASS_NAME, caseMap);
+
+		return pictureMap;
 	}
 
 	/**
@@ -105,7 +125,7 @@ public class PtlTestActionTest {
 		PowerMockito.when(testObject.getRun()).thenReturn(owner);
 		PowerMockito.when(owner.getUrl()).thenReturn("/owner");
 		PowerMockito.when(testObject.getUrl()).thenReturn("/testObject");
-	
+
 		PowerMockito.mockStatic(Jenkins.class);
 		PowerMockito.when(Jenkins.getActiveInstance()).thenReturn(jenkins);
 		PowerMockito.when(jenkins.getRootUrl()).thenReturn("http://localhost:8080/jenkins");
@@ -117,13 +137,13 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_CaseResult() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(CaseResult.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
 		assertEquals(NOT_SHOW_TABLE, ptlTestAction.getShowTable());
@@ -139,7 +159,7 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_ClassResult() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 		String packageName = TEST_PACKAGE_NAME;
 		String className = TEST_CLASS_NAME;
 
@@ -151,7 +171,7 @@ public class PtlTestActionTest {
 		PowerMockito.when(testObject.getName()).thenReturn(className);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
 		assertEquals(SHOW_TABLE, ptlTestAction.getShowTable());
@@ -167,7 +187,7 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_PackageResult() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 		String packageName = TEST_PACKAGE_NAME;
 
 		// Mock object
@@ -175,7 +195,7 @@ public class PtlTestActionTest {
 		PowerMockito.when(testObject.getName()).thenReturn(packageName);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
 		assertEquals(SHOW_TABLE, ptlTestAction.getShowTable());
@@ -191,13 +211,13 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_TestResult() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestResult.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
 		assertEquals(SHOW_TABLE, ptlTestAction.getShowTable());
@@ -213,13 +233,13 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_other() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(SimpleCaseResult.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
 		assertEquals(NOT_SHOW_TABLE, ptlTestAction.getShowTable());
@@ -234,16 +254,29 @@ public class PtlTestActionTest {
 	@Test
 	public void testPtlTestAction_empty() {
 		FilePath storage = null;
-		List<String> attachments = new ArrayList<String>();
-
+		// 1. no test class
+		Map<String, Map<String, List<String>>> pictureMap = new HashMap<String, Map<String, List<String>>>();
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
-
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
-
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 		// attachmentsが空のリストである。
 		assertEquals(0, ptlTestAction.getAttachments().size());
+
+		// 2. no test method
+		pictureMap.put(TEST_CLASS_NAME, new HashMap<String, List<String>>());
+		// Execute
+		ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
+		// attachmentsが空のリストである。
+		assertEquals(0, ptlTestAction.getAttachments().get(TEST_CLASS_NAME).size());
+
+		// 3. no picture
+		pictureMap.get(TEST_CLASS_NAME).put(TEST_CASE_NAME, new ArrayList<String>());
+		// Execute
+		ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
+		// attachmentsが空のリストである。
+		assertEquals(0, ptlTestAction.getAttachments().get(TEST_CLASS_NAME).get(TEST_CASE_NAME).size());
+
 	}
 
 	/**
@@ -254,18 +287,20 @@ public class PtlTestActionTest {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
-		List<String> actualAttachments = ptlTestAction.getAttachments();
-		assertEquals(attachments.size(), actualAttachments.size());
-		for (int i = 0; i < actualAttachments.size(); i++) {
-			assertEquals(attachments.get(i), actualAttachments.get(i));
+		Map<String, Map<String, List<String>>> actualAttachments = ptlTestAction.getAttachments();
+		List<String> actualPictures = actualAttachments.get(TEST_CLASS_NAME).get(TEST_CASE_NAME);
+		assertEquals(attachments.size(), actualPictures.size());
+		for (int i = 0; i < actualPictures.size(); i++) {
+			assertEquals(attachments.get(i), actualPictures.get(i));
 		}
 	}
 
@@ -279,20 +314,22 @@ public class PtlTestActionTest {
 		attachments.add(PICTURE1);
 		attachments.add(PICTURE2_SPECIAL);
 		attachments.add(PICTURE3);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
-		List<String> actualAttachments = ptlTestAction.getAttachments();
-		assertEquals(attachments.size(), actualAttachments.size());
-		assertEquals(attachments.get(0), actualAttachments.get(0));
+		Map<String, Map<String, List<String>>> actualAttachments = ptlTestAction.getAttachments();
+		List<String> actualPictures = actualAttachments.get(TEST_CLASS_NAME).get(TEST_CASE_NAME);
+		assertEquals(attachments.size(), actualPictures.size());
+		assertEquals(attachments.get(0), actualPictures.get(0));
 		// 「#」が「%23」に変換されることをassertする。
-		assertEquals(PICTURE2_ENCODED, actualAttachments.get(1));
-		assertEquals(attachments.get(2), actualAttachments.get(2));
+		assertEquals(PICTURE2_ENCODED, actualPictures.get(1));
+		assertEquals(attachments.get(2), actualPictures.get(2));
 	}
 
 	/**
@@ -305,27 +342,29 @@ public class PtlTestActionTest {
 		attachments.add(PICTURE1_SPECIAL);
 		attachments.add(PICTURE2_SPECIAL);
 		attachments.add(PICTURE3_SPECIAL);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		// Assert
-		List<String> actualAttachments = ptlTestAction.getAttachments();
-		assertEquals(attachments.size(), actualAttachments.size());
+		Map<String, Map<String, List<String>>> actualAttachments = ptlTestAction.getAttachments();
+		List<String> actualPictures = actualAttachments.get(TEST_CLASS_NAME).get(TEST_CASE_NAME);
+		assertEquals(attachments.size(), actualPictures.size());
 		// 全ての「#」が「%23」に変換される
-		assertEquals(PICTURE1_ENCODED, actualAttachments.get(0));
-		assertEquals(PICTURE2_ENCODED, actualAttachments.get(1));
-		assertEquals(PICTURE3_ENCODED, actualAttachments.get(2));
+		assertEquals(PICTURE1_ENCODED, actualPictures.get(0));
+		assertEquals(PICTURE2_ENCODED, actualPictures.get(1));
+		assertEquals(PICTURE3_ENCODED, actualPictures.get(2));
 	}
 
 	/**
 	 * 表示名を確認する。
 	 */
 	@Test
-	public final void testGetDisplayName() {
+	public void testGetDisplayName() {
 		assertEquals(DISPLAY_NAME, testAction.getDisplayName());
 	}
 
@@ -333,7 +372,7 @@ public class PtlTestActionTest {
 	 * ファイル名のアイコンを確認する。
 	 */
 	@Test
-	public final void testGetIconFileName() {
+	public void testGetIconFileName() {
 		assertEquals("package.gif", testAction.getIconFileName());
 	}
 
@@ -341,7 +380,7 @@ public class PtlTestActionTest {
 	 * URL名を確認する。
 	 */
 	@Test
-	public final void testGetUrlName() {
+	public void testGetUrlName() {
 		assertEquals("attachments", testAction.getUrlName());
 	}
 
@@ -349,7 +388,7 @@ public class PtlTestActionTest {
 	 * 新しいDirectoryBrowserSupportを初期化することを確認する。
 	 */
 	@Test
-	public final void testDoDynamic() {
+	public void testDoDynamic() {
 		DirectoryBrowserSupport directoryBrowserSupport = testAction.doDynamic();
 
 		// Assert
@@ -362,13 +401,14 @@ public class PtlTestActionTest {
 	 *  ・attachmentsが空のリストである。
 	 */
 	@Test
-	public final void testAnnotate_empty() {
+	public void testAnnotate_empty() {
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, null, new ArrayList<String>());
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, null,
+				new HashMap<String, Map<String, List<String>>>());
 
 		String text = SAMPLE_TEXT;
 		assertEquals(text, ptlTestAction.annotate(text));
@@ -380,17 +420,18 @@ public class PtlTestActionTest {
 	 *  ・テキストにattachmentsの項目が存在しない。
 	 */
 	@Test
-	public final void testAnnotate_singleAttachment_notIncluded() {
+	public void testAnnotate_singleAttachment_notIncluded() {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		String text = SAMPLE_TEXT;
 		assertEquals(text, ptlTestAction.annotate(text));
@@ -402,19 +443,20 @@ public class PtlTestActionTest {
 	 *  ・テキストにattachmentsの項目が存在しない。
 	 */
 	@Test
-	public final void testAnnotate_manyAttachment_notIncluded() {
+	public void testAnnotate_manyAttachment_notIncluded() {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
 		attachments.add(PICTURE2);
 		attachments.add(PICTURE3);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		String text = SAMPLE_TEXT;
 		assertEquals(text, ptlTestAction.annotate(text));
@@ -426,22 +468,21 @@ public class PtlTestActionTest {
 	 *  ・テキストにattachmentsの項目が存在する。
 	 */
 	@Test
-	public final void testAnnotate_singleAttachment_included() {
+	public void testAnnotate_singleAttachment_included() {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		String text = PICTURE1 + SAMPLE_TEXT;
-		assertEquals(
-				MessageFormat.format(ATTACHMENT_HTML, PICTURE1) + SAMPLE_TEXT,
-				ptlTestAction.annotate(text));
+		assertEquals(MessageFormat.format(ATTACHMENT_HTML, PICTURE1) + SAMPLE_TEXT, ptlTestAction.annotate(text));
 	}
 
 	/**
@@ -450,19 +491,20 @@ public class PtlTestActionTest {
 	 *  ・テキストにattachmentsの項目が存在する。
 	 */
 	@Test
-	public final void testAnnotate_manyAttachment_included() {
+	public void testAnnotate_manyAttachment_included() {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
 		attachments.add(PICTURE2);
 		attachments.add(PICTURE3);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		String text = SAMPLE_TEXT + PICTURE2 + PICTURE3;
 		assertEquals(SAMPLE_TEXT
@@ -477,19 +519,20 @@ public class PtlTestActionTest {
 	 *  ・テキストにattachmentsの全ての項目が存在する。
 	 */
 	@Test
-	public final void testAnnotate_manyAttachment_includedAll() {
+	public void testAnnotate_manyAttachment_includedAll() {
 		FilePath storage = null;
 		List<String> attachments = new ArrayList<String>();
 		attachments.add(PICTURE1);
 		attachments.add(PICTURE2);
 		attachments.add(PICTURE3);
+		Map<String, Map<String, List<String>>> pictureMap = createPictureMap(attachments);
 
 		// Mock object
 		TestObject testObject = PowerMockito.mock(TestObject.class);
 		mockJenkinsServer(testObject);
 
 		// Execute
-		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, attachments);
+		PtlTestAction ptlTestAction = new PtlTestAction(testObject, storage, pictureMap);
 
 		String text = PICTURE1 + PICTURE2 + PICTURE3;
 		assertEquals(MessageFormat.format(ATTACHMENT_HTML, PICTURE1) + MessageFormat.format(ATTACHMENT_HTML, PICTURE2)
@@ -499,8 +542,8 @@ public class PtlTestActionTest {
 	/**
 	 * null入力時のエラーを確認する。
 	 */
-	@Test(expected = NullPointerException.class) 
-	public final void testAnnotate_nullValue() {
+	@Test(expected = NullPointerException.class)
+	public void testAnnotate_nullValue() {
 		PowerMockito.mockStatic(Jenkins.class);
 		PowerMockito.when(Jenkins.getActiveInstance()).thenReturn(jenkins);
 		PowerMockito.when(jenkins.getRootUrl()).thenReturn("http://localhost:8080/jenkins/");
@@ -514,7 +557,7 @@ public class PtlTestActionTest {
 	 *  ・filename = null
 	 */
 	@Test(expected = NullPointerException.class) 
-	public final void testIsImageFile_null() {
+	public void testIsImageFile_null() {
 		String filename = null;
 		assertEquals(filename, PtlTestAction.isImageFile(filename));
 	}
@@ -524,7 +567,7 @@ public class PtlTestActionTest {
 	 *  ・filenameが空文字列である。
 	 */
 	@Test
-	public final void testIsImageFile_empty() {
+	public void testIsImageFile_empty() {
 		String filename = "";
 		boolean result = PtlTestAction.isImageFile(filename);
 		assertEquals(false, result);
@@ -535,7 +578,7 @@ public class PtlTestActionTest {
 	 *  ・filename = "testFile.txt"
 	 */
 	@Test
-	public final void testIsImageFile_notImage() {
+	public void testIsImageFile_notImage() {
 		String filename = "fileName.txt";
 		boolean result = PtlTestAction.isImageFile(filename);
 		assertEquals(false, result);
@@ -546,7 +589,7 @@ public class PtlTestActionTest {
 	 *  ・.gif、.jpg、.jpeg、.pngを含むファイルの拡張子が.gif、.jpg、.jpeg、.png以外である。
 	 */
 	@Test
-	public final void testIsImageFile_notEndedWithImageFormats() {
+	public void testIsImageFile_notEndedWithImageFormats() {
 		String[] filenames = new String[] { "testFile.gif.bak", "testFile.jpg.bak", "testFile.jpeg.bak",
 			"testFile.png.bak" };
 		for (String fileName : filenames) {
@@ -559,7 +602,7 @@ public class PtlTestActionTest {
 	 *  ・ファイルの拡張子がサポートしない画像形式（.tiff、.bmp、.webp等）である。
 	 */
 	@Test
-	public final void testIsImageFile_unsupportedImageFormats() {
+	public void testIsImageFile_unsupportedImageFormats() {
 		String[] filenames = new String[] { "testFile.tiff", "testFile.bmp", "testFile.webp" };
 		for (String fileName : filenames) {
 			assertEquals(false, PtlTestAction.isImageFile(fileName));
@@ -571,7 +614,7 @@ public class PtlTestActionTest {
 	 *  ・ファイルの拡張子が.gif、.jpg、.jpeg、.pngのいずれかの値である。
 	 */
 	@Test
-	public final void testIsImageFile_endedWithImageFormats() {
+	public void testIsImageFile_endedWithImageFormats() {
 		String[] filenames = new String[] { "testFile.gif", "testFile.jpg", "testFile.jpeg", "testFile.png" };
 		for (String fileName : filenames) {
 			assertEquals(true, PtlTestAction.isImageFile(fileName));
@@ -583,10 +626,35 @@ public class PtlTestActionTest {
 	 *  ・ファイルの拡張子が.GIF、.JPG、.JPEG、.PNGのいずれかの値である。
 	 */
 	@Test
-	public final void testIsImageFile_endedWithImageFormats_sensitive() {
+	public void testIsImageFile_endedWithImageFormats_sensitive() {
 		String[] filenames = new String[] { "testFile.GIF", "testFile.JPG", "testFile.JPEG", "testFile.PNG" };
 		for (String fileName : filenames) {
 			assertEquals(true, PtlTestAction.isImageFile(fileName));
 		}
+	}
+
+	/**
+	 * テストケース名からテストメソッド名を取得するテストケースである。
+	 * ・テストケース名がCapabilitiesを含む場合。
+	 */
+	@Test
+	public void testGetTestMethodName() {
+		String methodName = "compareDifferentBorderWidth";
+		String capabilities = "[Capabilities [{browser=chrome, platform=VISTA}]]";
+
+		assertEquals(methodName, PtlTestAction.getTestMethodName(methodName + capabilities));
+	}
+
+	/**
+	 * テストケース名からテストメソッド名を取得するテストケースである。
+	 * ・テストケース名がCapabilitiesを含まない場合。
+	 */
+	@Test
+	public void testGetTestMethodNameWithoutCapabilities() {
+		String methodName = "compareDifferentBorderWidth";
+		assertEquals(methodName, PtlTestAction.getTestMethodName(methodName));
+
+		methodName = "compareDifferentBorderWidth[Capabilities []]";
+		assertEquals("compareDifferentBorderWidth", PtlTestAction.getTestMethodName(methodName));
 	}
 }

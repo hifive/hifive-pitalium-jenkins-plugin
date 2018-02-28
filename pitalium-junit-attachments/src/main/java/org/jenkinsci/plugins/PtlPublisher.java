@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
@@ -109,7 +110,7 @@ public class PtlPublisher extends TestDataPublisher {
 			String testName;
 			FilePath storage = getAttachmentPath(testObject.getRun());
 
-			List<String> picturesList = new ArrayList<String>();
+			Map<String, Map<String, List<String>>> picturesMap = new HashMap<String, Map<String, List<String>>>();
 			if (testObject instanceof CaseResult) {
 				packageName = testObject.getParent().getParent().getName();
 				storage = getAttachmentPath(storage, packageName);
@@ -117,9 +118,8 @@ public class PtlPublisher extends TestDataPublisher {
 				storage = getAttachmentPath(storage, className);
 				testName = testObject.getName();
 				storage = getAttachmentPath(storage, testName);
-				for (String var : pictures.get(packageName).get(className).get(testName)) {
-					picturesList.add(var);
-				}
+				setPicturesMap(picturesMap, className, testName, "",
+						pictures.get(packageName).get(className).get(testName));
 			} else if (testObject instanceof ClassResult) {
 				packageName = testObject.getParent().getName();
 				storage = getAttachmentPath(storage, packageName);
@@ -127,9 +127,7 @@ public class PtlPublisher extends TestDataPublisher {
 				storage = getAttachmentPath(storage, className);
 				for (Map.Entry<String, List<String>> tstCase : pictures.get(packageName).get(className).entrySet()) {
 					testName = tstCase.getKey();
-					for (String var : tstCase.getValue()) {
-						picturesList.add(testName + "/" + var);
-					}
+					setPicturesMap(picturesMap, className, testName, testName + "/", tstCase.getValue());
 				}
 			} else if (testObject instanceof PackageResult) {
 				packageName = testObject.getName();
@@ -138,9 +136,8 @@ public class PtlPublisher extends TestDataPublisher {
 					className = tstCls.getKey();
 					for (Map.Entry<String, List<String>> tstCase : tstCls.getValue().entrySet()) {
 						testName = tstCase.getKey();
-						for (String var : tstCase.getValue()) {
-							picturesList.add(className + "/" + testName + "/" + var);
-						}
+						setPicturesMap(picturesMap, className, testName, className + "/" + testName + "/",
+								tstCase.getValue());
 					}
 				}
 			} else if (testObject instanceof TestResult) {
@@ -150,9 +147,8 @@ public class PtlPublisher extends TestDataPublisher {
 						className = tstCls.getKey();
 						for (Map.Entry<String, List<String>> tstCase : tstCls.getValue().entrySet()) {
 							testName = tstCase.getKey();
-							for (String var : tstCase.getValue()) {
-								picturesList.add(packageName + "/" + className + "/" + testName + "/" + var);
-							}
+							setPicturesMap(picturesMap, className, testName, packageName + "/" + className + "/"
+									+ testName + "/", tstCase.getValue());
 						}
 					}
 				}
@@ -161,8 +157,30 @@ public class PtlPublisher extends TestDataPublisher {
 				return Collections.emptyList();
 			}
 
-			PtlTestAction action = new PtlTestAction(testObject, storage, picturesList);
+			PtlTestAction action = new PtlTestAction(testObject, storage, picturesMap);
 			return Collections.<TestAction> singletonList(action);
+		}
+
+		/**
+		 * Set Pictures Map
+		 * 
+		 * @param className test class name
+		 * @param testName test case name (with Capabilities)
+		 * @param path appended path
+		 * @param lstPictures list of picture
+		 */
+		private void setPicturesMap(Map<String, Map<String, List<String>>> picturesMap, String className,
+				String testName, String path, List<String> lstPictures) {
+			List<String> picturesList = new ArrayList<String>();
+			for (String var : lstPictures) {
+				picturesList.add(path + var);
+			}
+
+			// Set pictures map
+			if (!picturesMap.containsKey(className)) {
+				picturesMap.put(className, new HashMap<String, List<String>>());
+			}
+			picturesMap.get(className).put(testName, picturesList);
 		}
 	}
 

@@ -156,7 +156,14 @@ public class DataTest {
 		}
 
 		// attachmentsが空のリストである。
-		assertEquals(size, action.getAttachments().size());
+		int count = 0;
+		Map<String, Map<String, List<String>>> actualAttachments = action.getAttachments();
+		for (Map<String, List<String>> actualCaseResults : actualAttachments.values()) {
+			for (List<String> actualPictures : actualCaseResults.values()) {
+				count += actualPictures.size();
+			}
+		}
+		assertEquals(size, count);
 	}
 
 	/**
@@ -175,7 +182,7 @@ public class DataTest {
 
 		try {
 			new Data(pictures);
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			fail(ex.getMessage());
 		}
 	}
@@ -233,7 +240,7 @@ public class DataTest {
 	}
 
 	/**
-	 * クラスレベルでのテスト結果を確認する。 
+	 * ケースレベルでのテスト結果を確認する。 
 	 *  ・testObjectがClassResultのインスタンスである。
 	 *  ・picturesが空のリストである。
 	 */

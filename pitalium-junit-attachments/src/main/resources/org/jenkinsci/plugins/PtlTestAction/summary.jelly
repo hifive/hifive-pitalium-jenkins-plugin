@@ -2,19 +2,27 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 <tr><td>
 
-	<span id="ptlcondition" conditionpkg="${it.getCondition_pkg()}" conditioncls="${it.getCondition_cls()}" conditionshowtable="${it.getCondition_showtable()}"></span>
+    <span id="ptlcondition" conditionpkg="${it.getPackageName()}" conditioncls="${it.getClassName()}" conditionshowtable="${it.getShowTable()}"></span>
     <h3>配下にある画像ファイル</h3>
-    <table class="pane" id="attachments">
-        <tr><td class="pane-header">${%Files}</td>
-        </tr>
-        <tr><td class="pane">
-            <j:forEach var="attachment" items="${it.attachments}">
-            <a class="${it.isImageFile(attachment) ? 'gallery' : ''}"
-            title="${attachment}"
-            href="attachments/${attachment}"><img src="attachments/${attachment}" width="160" /></a>
+    <div id="attachments">
+        <table class="pane">
+            <j:forEach var="clsResult" items="${it.attachments}">
+                <tr><td class="pane-header">${clsResult.key}</td></tr>
+                <j:forEach var="caseResult" items="${clsResult.value}">
+                    <tr><td class="pane-case">${it.getTestMethodName(caseResult.key)}</td></tr>
+                    <tr>
+                        <td>
+                            <j:forEach var="attachment" items="${caseResult.value}">
+                                <a class="${it.isImageFile(attachment) ? 'gallery' : ''}" title="${attachment}" href="attachments/${attachment}">
+                                    <img src="attachments/${attachment}" width="160" />
+                                </a>
+                            </j:forEach>
+                        </td>
+                    </tr>
+                </j:forEach>
             </j:forEach>
-        </td></tr>
-    </table>
+        </table>
+    </div>
 
     <h3>サマリー</h3>
     <table>

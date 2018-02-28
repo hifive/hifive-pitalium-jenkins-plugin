@@ -18,3 +18,10 @@ font-weight:bold;
 .Pita_selected{
 background-color:#cccccc;
 }
+
+#attachments td {
+border: 1px #bbb solid;
+}
+.pane-case {
+background-color: #eeeeee75;
+}

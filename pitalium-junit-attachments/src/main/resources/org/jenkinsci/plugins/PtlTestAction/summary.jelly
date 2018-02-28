@@ -24,15 +24,27 @@
         </table>
     </div>
 
+    <j:if test="${it.getShowTable()}">
     <h3>サマリー</h3>
     <table>
-           <tr><td>
-                <script src="attachments/result.js"></script>
-                <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
-                <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
-                <div id="PitaResult"></div>
-            </td></tr>
+       <tr><td>
+            <j:choose>
+                <j:when test="${it.getClassName() != null}">
+                    <script src="../../attachments/result.js"></script>
+                </j:when>
+                <j:when test="${it.getPackageName() != null}">
+                    <script src="../attachments/result.js"></script>
+                </j:when>
+                <j:otherwise>
+                    <script src="attachments/result.js"></script>
+                </j:otherwise>
+            </j:choose>
+            <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
+            <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
+            <div id="PitaResult"></div>
+        </td></tr>
     </table>
+    </j:if>
 
 </td></tr>
 
@@ -41,7 +53,9 @@
 <script type="text/javascript">
     jQuery(document).ready(function() {
         jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150,title:""});
-        GenSummaryTable();
+        <j:if test="${it.getShowTable()}">
+            GenSummaryTable();
+        </j:if>
     });
 </script>
 </j:jelly>

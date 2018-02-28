@@ -25,10 +25,16 @@ function GenSummaryTable(){
     var rows={};
 
     if(pkg!=null){
-        resultdata={[pkg]:resultdata[pkg]};
+        var displayData = new Object();
         if(cls!=null){
-            resultdata={[pkg]:{[cls]:resultdata[pkg][cls]}};
+                if(displayData[pkg] == null) {
+                        displayData[pkg] = new Object();
+                }
+                displayData[pkg][cls] = resultdata[pkg][cls];
+        } else {
+                displayData[pkg] = resultdata[pkg];
         }
+        resultdata = displayData;
     }
 
     for(pkgResult in resultdata){
@@ -317,5 +323,50 @@ function PitaResultExtract(column,row){
     //Web Storageへ選択セルを保存
     var storage = sessionStorage;
     storage.setItem(pkg+"."+cls, column+","+row);
+}
 
+/**
+ * Support Array.fill() to Internet Explorer
+ * Source: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill?v=example#Polyfill
+ */
+if (!Array.prototype.fill) {
+    Object.defineProperty(Array.prototype, 'fill', {
+        value : function(value) {
+
+            // Steps 1-2.
+            if (this == null) {
+                throw new TypeError('this is null or not defined');
+            }
+
+            var O = Object(this);
+
+            // Steps 3-5.
+            var len = O.length >>> 0;
+
+            // Steps 6-7.
+            var start = arguments[1];
+            var relativeStart = start >> 0;
+
+            // Step 8.
+            var k = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math
+                    .min(relativeStart, len);
+
+            // Steps 9-10.
+            var end = arguments[2];
+            var relativeEnd = end === undefined ? len : end >> 0;
+
+            // Step 11.
+            var final = relativeEnd < 0 ? Math.max(len + relativeEnd, 0) : Math
+                    .min(relativeEnd, len);
+
+            // Step 12.
+            while (k < final) {
+                O[k] = value;
+                k++;
+            }
+
+            // Step 13.
+            return O;
+        }
+    });
 }

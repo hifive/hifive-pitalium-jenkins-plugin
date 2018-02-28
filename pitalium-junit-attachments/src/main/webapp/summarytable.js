@@ -302,6 +302,18 @@ function PitaResultExtract(column,row){
         }
     }
 
+    // Highlight images
+    var tds = document.getElementById("attachments").getElementsByTagName("td");
+    Array.from(tds).forEach(function(td) {
+        if(td.getAttribute("name") != null) {
+            if(condition == "all" || str.indexOf(td.getAttribute("name")) == -1) {
+                td.classList.remove("hightlight");
+            } else {
+                td.classList.add("hightlight");
+            }
+        }
+    });
+
     //Web Storageへ選択セルを保存
     var storage = sessionStorage;
     storage.setItem(pkg+"."+cls, column+","+row);

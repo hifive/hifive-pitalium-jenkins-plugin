@@ -11,7 +11,7 @@
                 <j:forEach var="caseResult" items="${clsResult.value}">
                     <tr><td class="pane-case">${it.getTestMethodName(caseResult.key)}</td></tr>
                     <tr>
-                        <td>
+                        <td name="${clsResult.key}.${caseResult.key}">
                             <j:forEach var="attachment" items="${caseResult.value}">
                                 <a class="${it.isImageFile(attachment) ? 'gallery' : ''}" title="${attachment}" href="attachments/${attachment}">
                                     <img src="attachments/${attachment}" width="160" />

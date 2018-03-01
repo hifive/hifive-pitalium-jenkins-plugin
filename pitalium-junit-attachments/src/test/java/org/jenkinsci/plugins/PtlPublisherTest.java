@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.jenkinsci.plugins.PtlPublisher.Data;
 import org.junit.Before;
@@ -157,7 +158,7 @@ public class PtlPublisherTest {
 	public void testContributeTestData() throws Exception {
 		String packageName = "com.htmlhifive.pitalium.it.assertion.scroll";
 		String className = "CompareScrollBorderElementTest";
-		String methodName = "compareDifferentBorderWidth";
+		String methodName = "compareDifferentBorderWidth[Capabilities [{browser=chrome, platform=VISTA}]]";
 
 		// Mock input
 		CaseResult caseResult = mock(CaseResult.class);
@@ -196,6 +197,10 @@ public class PtlPublisherTest {
 		assertEquals(String.valueOf(false), testAction.getShowTable());
 		assertNull(testAction.getPackageName());
 		assertNull(testAction.getClassName());
+
+		Map<String, Map<String, List<String>>> pictureMap = testAction.getAttachments();
+		assertTrue(pictureMap.containsKey(caseResult.getClassName()));
+		assertTrue(pictureMap.get(caseResult.getClassName()).containsKey(caseResult.getName()));
 	}
 
 }

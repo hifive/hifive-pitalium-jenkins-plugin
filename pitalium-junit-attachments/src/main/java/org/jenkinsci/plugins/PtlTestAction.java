@@ -11,12 +11,15 @@ import hudson.tasks.junit.PackageResult;
 import jenkins.model.Jenkins;
 
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** テスト結果ページの表示で利用 */
 public class PtlTestAction extends TestAction {
 
 	private final FilePath storage;
-	private final List<String> attachments;
+	private final Map<String, Map<String, List<String>>> attachments;
 	private final TestObject testObject;
 	private final String showTable;
 	private final String packageName;
@@ -27,14 +30,19 @@ public class PtlTestAction extends TestAction {
 	 * 
 	 * @param testObject Test Object
 	 * @param storage File path
-	 * @param attachments List of file paths
+	 * @param attachments pictures data (included test class names, test method names and path of pictures)
 	 */
-	public PtlTestAction(TestObject testObject, FilePath storage, List<String> attachments) {
+	public PtlTestAction(TestObject testObject, FilePath storage, Map<String, Map<String, List<String>>> attachments) {
 		this.storage = storage;
 		this.testObject = testObject;
 		// URI Encoder
-		for (int i = 0; i < attachments.size(); i++) {
-			attachments.set(i, attachments.get(i).replace("#", "%23"));
+		for (Map.Entry<String, Map<String, List<String>>> tstCls : attachments.entrySet()) {
+			for (Map.Entry<String, List<String>> tstCase : tstCls.getValue().entrySet()) {
+				List<String> pictures = tstCase.getValue();
+				for (int i = 0; i < pictures.size(); i++) {
+					pictures.set(i, pictures.get(i).replace("#", "%23"));
+				}
+			}
 		}
 		this.attachments = attachments;
 		if (testObject instanceof CaseResult) {
@@ -98,8 +106,12 @@ public class PtlTestAction extends TestAction {
 		String url = Jenkins.getActiveInstance().getRootUrl() + testObject.getRun().getUrl() + "testReport"
 				+ testObject.getUrl() + "/attachments/";
 		String result = text;
-		for (String attachment : attachments) {
-			result = result.replace(attachment, "<a href=\"" + url + attachment + "\">" + attachment + "</a>");
+		for (Map.Entry<String, Map<String, List<String>>> tstCls : attachments.entrySet()) {
+			for (Map.Entry<String, List<String>> tstCase : tstCls.getValue().entrySet()) {
+				for (String picture : tstCase.getValue()) {
+					result = result.replace(picture, "<a href=\"" + url + picture + "\">" + picture + "</a>");
+				}
+			}
 		}
 		return result;
 	}
@@ -126,9 +138,9 @@ public class PtlTestAction extends TestAction {
 	}
 
 	/**
-	 * @return list of files path
+	 * @return pictures data
 	 */
-	public List<String> getAttachments() {
+	public Map<String, Map<String, List<String>>> getAttachments() {
 		return attachments;
 	}
 
@@ -149,4 +161,20 @@ public class PtlTestAction extends TestAction {
 		return filename.matches("(?i).+\\.(gif|jpe?g|png)$");
 	}
 
+	/**
+	 * Get test method name from test case name
+	 * 
+	 * @param testName Test name
+	 * @return test method
+	 */
+	public static String getTestMethodName(String testName) {
+		String testMethodName = testName;
+		Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities.*\\]$");
+		Matcher m = p.matcher(testMethodName);
+		if (m.find()) {
+			testMethodName = m.group(1);
+		}
+
+		return testMethodName;
+	}
 }

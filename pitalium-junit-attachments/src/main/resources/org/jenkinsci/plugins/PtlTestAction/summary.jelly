@@ -2,29 +2,49 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 <tr><td>
 
-	<span id="ptlcondition" conditionpkg="${it.getCondition_pkg()}" conditioncls="${it.getCondition_cls()}" conditionshowtable="${it.getCondition_showtable()}"></span>
+    <span id="ptlcondition" conditionpkg="${it.getPackageName()}" conditioncls="${it.getClassName()}" conditionshowtable="${it.getShowTable()}"></span>
     <h3>配下にある画像ファイル</h3>
-    <table class="pane" id="attachments">
-        <tr><td class="pane-header">${%Files}</td>
-        </tr>
-        <tr><td class="pane">
-            <j:forEach var="attachment" items="${it.attachments}">
-            <a class="${it.isImageFile(attachment) ? 'gallery' : ''}"
-            title="${attachment}"
-            href="attachments/${attachment}"><img src="attachments/${attachment}" width="160" /></a>
+    <div id="attachments">
+        <table class="pane">
+            <j:forEach var="clsResult" items="${it.attachments}">
+                <tr><td class="pane-header">${clsResult.key}</td></tr>
+                <j:forEach var="caseResult" items="${clsResult.value}">
+                    <tr><td class="pane-case">${it.getTestMethodName(caseResult.key)}</td></tr>
+                    <tr>
+                        <td name="${clsResult.key}.${caseResult.key}">
+                            <j:forEach var="attachment" items="${caseResult.value}">
+                                <a class="${it.isImageFile(attachment) ? 'gallery' : ''}" title="${attachment}" href="attachments/${attachment}">
+                                    <img src="attachments/${attachment}" width="160" />
+                                </a>
+                            </j:forEach>
+                        </td>
+                    </tr>
+                </j:forEach>
             </j:forEach>
-        </td></tr>
-    </table>
+        </table>
+    </div>
 
+    <j:if test="${it.getShowTable()}">
     <h3>サマリー</h3>
     <table>
-           <tr><td>
-                <script src="attachments/result.js"></script>
-                <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
-                <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
-                <div id="PitaResult"></div>
-            </td></tr>
+       <tr><td>
+            <j:choose>
+                <j:when test="${it.getClassName() != null}">
+                    <script src="../../attachments/result.js"></script>
+                </j:when>
+                <j:when test="${it.getPackageName() != null}">
+                    <script src="../attachments/result.js"></script>
+                </j:when>
+                <j:otherwise>
+                    <script src="attachments/result.js"></script>
+                </j:otherwise>
+            </j:choose>
+            <link href="${rootURL}/plugin/PitaJenkinsPlugin/PitaResultStyle.css" rel="stylesheet" />
+            <script src="${rootURL}/plugin/PitaJenkinsPlugin/summarytable.js"></script>
+            <div id="PitaResult"></div>
+        </td></tr>
     </table>
+    </j:if>
 
 </td></tr>
 
@@ -33,7 +53,9 @@
 <script type="text/javascript">
     jQuery(document).ready(function() {
         jQuery("a.gallery").colorbox({rel: "gallery", maxWidth: "95%", maxHeight: "95%", speed: 150,title:""});
-        GenSummaryTable();
+        <j:if test="${it.getShowTable()}">
+            GenSummaryTable();
+        </j:if>
     });
 </script>
 </j:jelly>

@@ -1,0 +1,149 @@
+{
+  "resultId" : "2018_01_11_18_48_45",
+  "result" : "SUCCESS",
+  "screenshotResults" : [ {
+    "screenshotId" : "s",
+    "result" : "SUCCESS",
+    "expectedId" : "2018_01_04_16_59_10",
+    "targetResults" : [ {
+      "result" : "SUCCESS",
+      "target" : {
+        "selector" : {
+          "type" : "NAME",
+          "value" : "iframe-scroll",
+          "index" : 0
+        },
+        "rectangle" : {
+          "x" : 0.0,
+          "y" : 0.0,
+          "width" : 300.0,
+          "height" : 404.0
+        },
+        "screenArea" : {
+          "selector" : {
+            "type" : "NAME",
+            "value" : "iframe-scroll"
+          }
+        }
+      },
+      "excludes" : [ ],
+      "moveTarget" : true,
+      "hiddenElementSelectors" : [ ]
+    } ],
+    "testClass" : "CompareSingleScrollElementTest",
+    "testMethod" : "compareScrollableIFrameElement",
+    "capabilities" : {
+      "browserName" : "chrome",
+      "os" : "WINDOWS",
+      "platform" : "VISTA"
+    }
+  }, {
+    "screenshotId" : "s",
+    "result" : "SUCCESS",
+    "expectedId" : "2018_01_04_16_59_10",
+    "targetResults" : [ {
+      "result" : "SUCCESS",
+      "target" : {
+        "selector" : {
+          "type" : "ID",
+          "value" : "div-scroll",
+          "index" : 0
+        },
+        "rectangle" : {
+          "x" : 0.0,
+          "y" : 0.0,
+          "width" : 300.0,
+          "height" : 402.0
+        },
+        "screenArea" : {
+          "selector" : {
+            "type" : "ID",
+            "value" : "div-scroll"
+          }
+        }
+      },
+      "excludes" : [ ],
+      "moveTarget" : true,
+      "hiddenElementSelectors" : [ ]
+    } ],
+    "testClass" : "CompareSingleScrollElementTest",
+    "testMethod" : "compareScrollableDivElement",
+    "capabilities" : {
+      "browserName" : "chrome",
+      "os" : "WINDOWS",
+      "platform" : "VISTA"
+    }
+  }, {
+    "screenshotId" : "s",
+    "result" : "SUCCESS",
+    "expectedId" : "2018_01_04_16_59_10",
+    "targetResults" : [ {
+      "result" : "SUCCESS",
+      "target" : {
+        "selector" : {
+          "type" : "CSS_SELECTOR",
+          "value" : "#table-scroll > tbody",
+          "index" : 0
+        },
+        "rectangle" : {
+          "x" : 0.0,
+          "y" : 0.0,
+          "width" : 300.0,
+          "height" : 320.0
+        },
+        "screenArea" : {
+          "selector" : {
+            "type" : "CSS_SELECTOR",
+            "value" : "#table-scroll > tbody"
+          }
+        }
+      },
+      "excludes" : [ ],
+      "moveTarget" : true,
+      "hiddenElementSelectors" : [ ]
+    } ],
+    "testClass" : "CompareSingleScrollElementTest",
+    "testMethod" : "compareScrollableTableElement",
+    "capabilities" : {
+      "browserName" : "chrome",
+      "os" : "WINDOWS",
+      "platform" : "VISTA"
+    }
+  }, {
+    "screenshotId" : "s",
+    "result" : "SUCCESS",
+    "expectedId" : "2018_01_04_16_59_10",
+    "targetResults" : [ {
+      "result" : "SUCCESS",
+      "target" : {
+        "selector" : {
+          "type" : "ID",
+          "value" : "textarea-scroll",
+          "index" : 0
+        },
+        "rectangle" : {
+          "x" : 0.0,
+          "y" : 0.0,
+          "width" : 299.0,
+          "height" : 318.0
+        },
+        "screenArea" : {
+          "selector" : {
+            "type" : "ID",
+            "value" : "textarea-scroll"
+          }
+        }
+      },
+      "excludes" : [ ],
+      "moveTarget" : true,
+      "hiddenElementSelectors" : [ ]
+    } ],
+    "testClass" : "CompareSingleScrollElementTest",
+    "testMethod" : "compareScrollableTextareaElement",
+    "capabilities" : {
+      "browserName" : "chrome",
+      "os" : "WINDOWS",
+      "platform" : "VISTA"
+    }
+  } ]
+}

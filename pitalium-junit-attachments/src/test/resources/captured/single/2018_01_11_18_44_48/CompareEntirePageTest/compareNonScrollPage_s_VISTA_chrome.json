@@ -1,0 +1,23 @@
+[ {
+  "target" : {
+    "selector" : {
+      "type" : "TAG_NAME",
+      "value" : "body",
+      "index" : 0
+    },
+    "rectangle" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "width" : 1270.0,
+      "height" : 835.0
+    },
+    "screenArea" : {
+      "selector" : {
+        "type" : "TAG_NAME",
+        "value" : "body"
+      }
+    }
+  },
+  "excludes" : [ ],
+  "hiddenElementSelectors" : [ ]
+} ]

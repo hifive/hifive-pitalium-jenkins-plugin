@@ -2,6 +2,9 @@ package org.jenkinsci.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,7 +93,7 @@ public class GetResultOutput {
 
 					//pictures_map.get(pkgName).get(clsName).put(caseName,SearchPictures(suiteResult,caseName,target));
 					picturesMap.get(pkgName).get(clsName).put(caseName,
-							searchPicturesWithPruning(suiteResult, caseName, target));
+							searchPicturesWithPruning(clsName, caseName, target));
 				}
 			}
 			FilePath resultjspath = PtlPublisher.getAttachmentPath(attachmentsStorage, "result.js");
@@ -107,37 +110,28 @@ public class GetResultOutput {
 	 * ファイル名の一覧を作成 探索に当たって，探索ディレクトリの枝切りを行う
 	 * Assump：basedir/PJ名（任意）/pitalium/target/work/test-cobertura/test-result/results/日付以下 のファイル構成
 	 */
-	private List<String> searchPicturesWithPruning(SuiteResult suiteResult, String caseName, FilePath target) {
-		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
+	private List<String> searchPicturesWithPruning(String className, String caseName, FilePath target) {
 		// 日付/クラス/ワイルドカード.png
-		String keyword = getTestName(caseName, getCapbilities(caseName), suiteResult);
-		if (keyword == null) {
+		FilePath resultDirectory = getSearchDirectory(className);
+		String keyword = getTestName(caseName, getCapbilities(caseName));
+		if (resultDirectory == null || keyword == null) {
 			return Collections.emptyList();
 		}
 		try {
-			List<FilePath> dirs = resultDirectory.listDirectories();
 			ArrayList<String> dstpics = new ArrayList<>();
-			FilePath resultsDir = null;
-			for (FilePath dir : dirs) {
-				resultsDir = new FilePath(dir, "pitalium/target/work/test-cobertura/test-result/results/");
-				if (!resultsDir.exists()) {
-					System.err.println(resultsDir + " does not exist. continue next loop.");
-					continue;
-				}
-				final DirectoryScanner ds = new DirectoryScanner();
-				ds.setIncludes(new String[] { keyword });
-				ds.setBasedir(resultsDir.getRemote());
-				ds.scan();
-				String pics[] = ds.getIncludedFiles();
-				String fileName = null;
-				for (String var : pics) {
-					fileName = new File(var).getName();
-					FilePath dst = new FilePath(target, fileName);
-					FilePath src = new FilePath(resultsDir, var);
-					src.copyTo(dst);
+			final DirectoryScanner ds = new DirectoryScanner();
+			ds.setIncludes(new String[] { keyword });
+			ds.setBasedir(resultDirectory.getRemote());
+			ds.scan();
+			String pics[] = ds.getIncludedFiles();
+			String fileName = null;
+			for (String var : pics) {
+				fileName = new File(var).getName();
+				FilePath dst = new FilePath(target, fileName);
+				FilePath src = resultDirectory.child(var);
+				src.copyTo(dst);
 
-					dstpics.add(fileName);
-				}
+				dstpics.add(fileName);
 			}
 			return dstpics;
 		} catch (IOException | InterruptedException e) {
@@ -147,30 +141,49 @@ public class GetResultOutput {
 	}
 
 	/**
-	 * 標準出力から探索ディレクトリを切り出し
-	 *
-	 * @return String 探索する相対パス(パスの区切りは/に置換)
+	 * 結果画像フォルダの探索開始パスから、探索ディレクトリを検索して返す。 
+	 * 1. 結果画像フォルダの探索開始パス以下で、 テストクラス名に一致するディレクトリを探す。 
+	 * 2-1. 1つしか見つからなければ、その親ディレクトリ名を返す。
+	 * 2-2. 複数見つかった場合は、更新日時が最新のものの親ディレクトリ名を返す。
+	 * 
+	 * @return FilePath 探索する相対パス
 	 */
 	//TODO チェック：パス操作
-	// FILEPATH型じゃないString型で\つきパスを返すので，リモートでも動くか要確認．
-	private String getSearchDirectory(SuiteResult suiteResult) {
-		String stdout = suiteResult.getStdout();
-		int loc = stdout.lastIndexOf("[Save TestResult]");
-		if (loc == -1) {
-			System.err.println("Fail to find out [Save TestResult] in " + suiteResult.getName() + ".");
-			return null;
+	private FilePath getSearchDirectory(String className) {
+		// Remove package name from class name
+		String clsName = className.substring(className.lastIndexOf(".") + 1);
+		FilePath resultDirectory = new FilePath(workspace, resultPicsAddr);
+
+		try {
+			// Check exist
+			if (!resultDirectory.exists()) {
+				return null;
+			}
+
+			final DirectoryScanner ds = new DirectoryScanner();
+			ds.setIncludes(new String[] { "**/" + clsName + "/result.json" });
+			ds.setBasedir(resultDirectory.getRemote());
+			ds.scan();
+			String pics[] = ds.getIncludedFiles();
+
+			FilePath folder = null;
+			DateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+			for(int i = pics.length - 1; i >= 0; i--) {
+				folder = resultDirectory.child(pics[i]).getParent();
+
+				// Check name of parent folder by date
+				try {
+					format.parse(folder.getParent().getName());
+					return folder;
+				} catch (ParseException e) {
+					// Invalid folder name
+				}
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
 		}
-		String str = stdout.substring(loc);
-		Pattern p = Pattern.compile("\\\\((\\d|_){19}\\\\.*)\\\\result.json");
-		Matcher m = p.matcher(str);
-		if (m.find()) {
-			String res = m.group(1);
-			res = res.replace("\\", "/");
-			return res;
-		} else {
-			System.err.println("[Exception]Fail to tokenize " + str + ". Following step in this case was skipped.");
-			return null;
-		}
+
+		return null;
 	}
 
 	/**
@@ -178,18 +191,12 @@ public class GetResultOutput {
 	 *
 	 * @return String 検索するファイル名
 	 */
-	private String getTestName(String testName, Map<String, String> capbilities, SuiteResult suiteResult) {
-		String directory = getSearchDirectory(suiteResult);
-		if (directory == null) {
-			directory = "";
-		}
+	private String getTestName(String testName, Map<String, String> capbilities) {
 		Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities.*\\]$");
 		Matcher m = p.matcher(testName);
 		if (m.find()) {
 			StringBuilder buff = new StringBuilder();
-			buff.append("**/");
-			buff.append(directory);
-			buff.append("/" + m.group(1) + "_*_");
+			buff.append(m.group(1) + "_*_");
 			if (capbilities.get("platform") != null) {
 				buff.append(capbilities.get("platform"));
 			}
@@ -215,13 +222,21 @@ public class GetResultOutput {
 	 */
 	private Map<String, String> getCapbilities(String testName) {
 		Map<String, String> capabilityMap = new HashMap<String, String>();
-		Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities\\s?\\[\\{(.*)\\}\\]\\]$");
+		Pattern p = Pattern.compile("^(.*)\\s?\\[Capabilities\\s?\\[?\\{(.*)\\}\\]?\\]$");
 		Matcher m = p.matcher(testName);
 		if (m.find()) {
 			String[] token = m.group(2).split(", ");
 			for (int i = 0; i < token.length; i++) {
-				String[] caps = token[i].split("=");
-				capabilityMap.put(caps[0], caps[1]);
+				String[] caps = null;
+				if (token[i].contains("=")) {
+					caps = token[i].split("=");
+				} else if (token[i].contains(":")) {
+					caps = token[i].split(":");
+				}
+
+				if(caps.length == 2) {
+					capabilityMap.put(caps[0].trim(), caps[1].trim());
+				}
 			}
 		}
 		return capabilityMap;
